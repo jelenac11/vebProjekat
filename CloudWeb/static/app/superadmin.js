@@ -49,6 +49,45 @@ Vue.component("super-admin", {
 	        </ul>
 	    </div>
 	</nav>
+	
+	<div class="modal fade" id="profilModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog" role="document">
+	    	<div class="modal-content">
+				<div class="modal-header">
+	        		<h5 class="modal-title" id="exampleModalLabel">Pregled profila</h5>
+	        		<button type="button" class="close" data-dismiss="modal">
+	          			<span>&times;</span>
+	        		</button>
+	      		</div>
+	      		<div class="modal-body">
+	        		<ul class="list-group">
+					  	<li class="list-group-item">
+					  		<div class="d-flex w-20 justify-content-between">
+						  		<h6>Email:</h6>
+						  		<p class="mb-0">{{ this.supAdm.email }}</p>
+						  	</div>
+					  	</li>
+					  	<li class="list-group-item">
+					  		<div class="d-flex w-20 justify-content-between">
+						  		<h6>Ime:</h6>
+						  		<p class="mb-0">{{ this.supAdm.ime }}</p>
+						  	</div>
+					  	</li>
+					  	<li class="list-group-item">
+					  		<div class="d-flex w-20 justify-content-between">
+					  			<h6>Prezme:</h6>
+					  			<p class="mb-0">{{ this.supAdm.prezime }}</p>
+					  		</div>
+					  	</li>
+					</ul>
+	      		</div>
+	      		<div class="modal-footer">
+	        		<button type="button" class="btn btn-secondary mr-auto" data-dismiss="modal">Nazad</button>
+	        		<router-link :to="{ path: 'izmenaProfila'}" class="btn btn-primary" data-dismiss="modal">Izmena podataka</router-link>
+	      		</div>
+	    	</div>
+		</div>
+	</div>
 </div>
 `
 	,

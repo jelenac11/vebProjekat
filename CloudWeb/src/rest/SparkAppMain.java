@@ -70,6 +70,41 @@ public class SparkAppMain {
 				return g.toJson(korisnik);
 			}
 		});
+
+		post("/izmeniProfil", (req, res) -> {
+			Session ss = req.session(true);
+			Korisnik stari = ss.attribute("korisnik");
+			Korisnik izmenjen = g.fromJson(req.body(), Korisnik.class);
+
+			for (Korisnik k : korisnici) {
+				if (!k.getEmail().equals(stari.getEmail())) {
+					if (k.getEmail().equals(izmenjen.getEmail())) {
+						return false;
+					}
+				}
+			}
+
+			for (int i = 0; i < korisnici.size(); i++) {
+				if (korisnici.get(i).getEmail().equals(stari.getEmail())) {
+					ss.attribute("korisnik", izmenjen);
+					korisnici.set(i, izmenjen);
+					
+					for (Organizacija org : organizacije) {
+						if (org.getIme().equals(izmenjen.getOrganizacija())) {
+							for (int j = 0; j < org.getKorisnici().size(); j++) {
+								if (org.getKorisnici().get(j).equals(stari.getIme())) {
+									org.getKorisnici().set(j, izmenjen.getIme());
+								}
+							}
+						}
+					}
+					
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
 		
 		get("/logout", (req, res) -> {
 			Session ss = req.session(true);
@@ -79,5 +114,14 @@ public class SparkAppMain {
 			}
 			return true;
 		});
+	}
+	
+	private static void upisiUFajl() throws IOException {
+		String sep = System.getProperty("file.separator");
+
+		PrintWriter writerKorisnici = new PrintWriter(
+				new FileWriter(new File("." + sep + "resursi" + sep + "korisnici.json")));
+		writerKorisnici.write(g.toJson(korisnici));
+		writerKorisnici.close();
 	}
 }
