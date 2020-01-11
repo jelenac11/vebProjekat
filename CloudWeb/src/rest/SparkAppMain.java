@@ -41,7 +41,7 @@ public class SparkAppMain {
 
 		staticFiles.externalLocation(new File("." + sep + "static").getCanonicalPath());
 
-//		korisnici.add(new Korisnik("super@admin", "sa", "Super", "Admin", "nema", Uloga.SUPER_ADMIN));
+		korisnici.add(new Korisnik("super@admin", "sa", "Super", "Admin", "nema", Uloga.SUPER_ADMIN));
 		//ucitajFajlove();
 
 		post("/login", (req, res) -> {
@@ -58,6 +58,26 @@ public class SparkAppMain {
 				}
 			}
 			return false;
+		});
+		
+		get("/ulogovan", (req, res) -> {
+			res.type("application/json");
+			Session ss = req.session(true);
+			Korisnik korisnik = ss.attribute("korisnik");
+			if (korisnik == null) {
+				return new Korisnik();
+			} else {
+				return g.toJson(korisnik);
+			}
+		});
+		
+		get("/logout", (req, res) -> {
+			Session ss = req.session(true);
+			Korisnik korisnik = ss.attribute("korisnik");
+			if (korisnik != null) {
+				ss.invalidate();
+			}
+			return true;
 		});
 	}
 }
