@@ -22,9 +22,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
+import beans.model.Disk;
+import beans.model.KategorijaVM;
 import beans.model.Korisnik;
 import beans.model.Organizacija;
 import beans.model.Uloga;
+import beans.model.VM;
 import spark.Request;
 import spark.Session;
 
@@ -106,6 +109,61 @@ public class SparkAppMain {
 			return true;
 		});
 		
+		post("/izmeniOrg", (req, res) -> {
+			Organizacija[] parametri = g.fromJson(req.body(), Organizacija[].class);
+			Organizacija stara = parametri[0];
+			Organizacija izmenjena = parametri[1];
+
+			for (Organizacija o : organizacije) {
+				if (!o.getIme().equals(stara.getIme())) {
+					if (o.getIme().equals(izmenjena.getIme())) {
+						return false;
+					}
+				}
+			}
+
+			for (int i = 0; i < organizacije.size(); i++) {
+				if (organizacije.get(i).getIme().equals(stara.getIme())) {
+					organizacije.set(i, izmenjena);
+					for (String email : izmenjena.getKorisnici()) {
+						for (Korisnik k : korisnici) {
+							if (k.getEmail().equals(email)) {
+								k.setOrganizacija(izmenjena.getIme());
+							}
+						}
+					}
+					
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
+		post("/dodajOrg", (req, res) -> {
+			Organizacija nova = g.fromJson(req.body(), Organizacija.class);
+			
+			for (Organizacija o : organizacije) {
+				if (o.getIme().equals(nova.getIme())) {
+					return false;
+				}
+			}
+
+			organizacije.add(nova);
+			upisiUFajl();
+			return true;
+		});
+		
+		get("/ucitajOrganizacije", (req, res) -> {
+			res.type("application/json");
+			return g.toJson(organizacije);
+		});
+		
+		get("/ucitajKorisnike", (req, res) -> {
+			res.type("application/json");
+			return g.toJson(korisnici);
+		});
+		
 		get("/logout", (req, res) -> {
 			Session ss = req.session(true);
 			Korisnik korisnik = ss.attribute("korisnik");
@@ -116,6 +174,15 @@ public class SparkAppMain {
 		});
 	}
 	
+	private static void ucitajFajlove() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
+		String sep = System.getProperty("file.separator");
+		
+		Korisnik[] korisniciLista = g.fromJson(new FileReader("resursi" + sep + "korisnici.json"), Korisnik[].class);
+		korisnici = new ArrayList<Korisnik>(Arrays.asList(korisniciLista));
+		Organizacija[] organizacijeLista = g.fromJson(new FileReader("resursi" + sep + "organizacije.json"), Organizacija[].class);
+		organizacije = new ArrayList<Organizacija>(Arrays.asList(organizacijeLista));
+	}
+
 	private static void upisiUFajl() throws IOException {
 		String sep = System.getProperty("file.separator");
 
@@ -123,5 +190,10 @@ public class SparkAppMain {
 				new FileWriter(new File("." + sep + "resursi" + sep + "korisnici.json")));
 		writerKorisnici.write(g.toJson(korisnici));
 		writerKorisnici.close();
+
+		PrintWriter writerOrganizacije = new PrintWriter(
+				new FileWriter(new File("." + sep + "resursi" + sep + "organizacije.json")));
+		writerOrganizacije.write(g.toJson(organizacije));
+		writerOrganizacije.close();
 	}
 }
