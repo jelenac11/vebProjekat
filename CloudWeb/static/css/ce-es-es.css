@@ -1,0 +1,31 @@
+.nav-link {
+	color: white;
+}
+.nav-link:hover {
+	color: silver;
+}
+.nav-link:active {
+	color: gray;
+}
+.dropdown-menu {
+	background-color: #212529;
+}
+.dropdown-item {
+	color: white;
+	background-color: #212529;
+}
+.dropdown-item:hover {
+	color: white;
+	background-color: #1c1c1c;
+}
+.invalid-feedback#izmenaInvalid {
+  margin-top: 0px;	
+  text-align: left;
+}
+.invalid-feedback#dodavanjeInvalid {
+  margin-top: 0px;	
+  text-align: left;
+}
+.nePoklapajuSe#lozinka2 {
+  border-color: #dc3545;
+}
