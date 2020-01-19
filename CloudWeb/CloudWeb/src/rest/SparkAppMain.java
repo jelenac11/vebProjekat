@@ -140,6 +140,22 @@ public class SparkAppMain {
 			return true;
 		});
 		
+		post("/izmeniKor", (req, res) -> {
+			Korisnik[] parametri = g.fromJson(req.body(), Korisnik[].class);
+			Korisnik stari = parametri[0];
+			Korisnik izmenjeni = parametri[1];
+			
+			for (int i = 0; i < korisnici.size(); i++) {
+				if (korisnici.get(i).getEmail().equals(stari.getEmail())) {
+					korisnici.set(i, izmenjeni);
+					
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
 		post("/dodajOrg", (req, res) -> {
 			Organizacija nova = g.fromJson(req.body(), Organizacija.class);
 			
