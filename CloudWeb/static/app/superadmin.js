@@ -11,11 +11,20 @@ Vue.component("super-admin", {
 	    	},
 	    	organizacije : [],
 	    	korisnici : [],
+	    	kategorije : [],
 	    	izabranaOrganizacija : {},
 	    	novaOrganizacija : {},
 	    	submitovano : false,
 	    	uspesnaIzmena : true,
 	    	korisniciOrganizacije : [],
+	    	izabraniKorisnik : {},
+	    	noviKorisnik : {},
+	    	izabranaKategorija : {},
+	    	novaKategorija : {},
+	    	potvrdaLozinke : "",
+	    	istaJeKategorija : true,
+	    	istaJeKategorija : true,
+	    	poklapajuSeLozinke : true,
     	}
 	},
 	template: `
@@ -76,6 +85,54 @@ Vue.component("super-admin", {
 			  	</tbody>
 			</table>
 			<router-link :to="{ path: 'dodavanjeOrganizacije'}" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeOrg">Dodaj organizaciju</router-link>
+		</div>
+		<div class="tab-pane fade" id="pills-korisnici" role="tabpanel">
+			<table class="table table-hover table-striped">
+			  	<thead class="thead-light">
+			    	<tr>
+				      	<th scope="col" width="25%">Email</th>
+				      	<th scope="col" width="15%">Ime</th>
+				      	<th scope="col" width="15%">Prezime</th>
+				      	<th scope="col" width="20%">Organizacija</th>
+				      	<th scope="col" width="15%">Uloga</th>
+				      	<th scope="col" width="10%"></th>
+			    	</tr>
+			  	</thead>
+			  	<tbody>
+			  		<tr v-for="k in korisnici" data-toggle="modal" data-target="#izmenaKorisnikaModal" v-on:click="izaberiKor(k)">
+				      	<td width="25%">{{ k.email }}</td>
+				      	<td width="15%">{{ k.ime }}</td>
+				      	<td width="15%">{{ k.prezime }}</td>
+				      	<td width="20%">{{ k.organizacija }}</td>
+				      	<td width="15%">{{ k.uloga }}</td>
+				      	<td width="10%"><button v-if="supAdm.email != k.email" class="btn btn-danger btn-sm" v-on:click="obrisiKorisnika(k)">Ukloni</button></td>
+			    	</tr>
+			  	</tbody>
+			</table>
+			<router-link :to="{ path: 'dodavanjeKorisnika'}" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeKor">Dodaj korisnika</router-link>
+		</div>
+		<div class="tab-pane fade" id="pills-kategorije" role="tabpanel" >
+			<table class="table table-hover table-striped">
+			  	<thead class="thead-light">
+			    	<tr>
+				      	<th scope="col" width="36%">Ime</th>
+						<th scope="col" width="18%">Broj jezgara</th>
+				      	<th scope="col" width="18%">RAM</th>
+				      	<th scope="col" width="18%">GPU jezgra</th>
+				      	<th scope="col" width="10%"></th>
+			    	</tr>
+			  	</thead>
+			  	<tbody>
+			  		<tr v-for="kat in kategorije" data-toggle="modal" data-target="#izmenaKatModal" v-on:click="izaberiKat(kat)">
+				      	<td width="36%">{{ kat.ime }}</td>
+				      	<td width="18%">{{ kat.brojJezgara }}</td>
+				      	<td width="18%">{{ kat.RAM }}</td>
+				      	<td width="18%">{{ kat.GPUJezgra }}</td>
+				      	<td width="10%"><button class="btn btn-danger btn-sm" v-on:click="obrisiKategoriju(kat)">Ukloni</button></td>
+			    	</tr>
+			  	</tbody>
+			</table>
+			<router-link :to="{ path: 'dodavanjeKategorije'}" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeKat">Dodaj kategorije</router-link>
 		</div>
 	</div>
 	
@@ -194,6 +251,126 @@ Vue.component("super-admin", {
 	    	</div>
 		</div>
 	</div>
+	
+	<div class="modal fade" id="izmenaKorisnikaModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg" role="document">
+	    	<div class="modal-content">
+	      		<div class="modal-header">
+	        		<h5 class="modal-title">Podaci o korisniku</h5>
+	        		<button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+	      		</div>
+	      		<div class="modal-body">
+	        		<form class="needs-validation mb-4" v-bind:class="{ 'was-validated': submitovano }" novalidate @submit.prevent="izmenaKor" id="forma-izmena-kor">
+					  	<div class="form-row mb-3">
+					  		<div class="col">
+					    	 	<label for="email">Email adresa</label>
+								<input type="email" v-model="noviKorisnik.email" class="form-control" id="email" placeholder="Email adresa" disabled required>
+							</div>
+						</div>
+						<div class="form-row">
+					    	<div class="col">
+					    	 	<label for="lozinka1">Lozinka</label>
+								<input type="password" minlength="8" maxlength="20" v-model="noviKorisnik.lozinka" class="form-control" id="lozinka1" placeholder="Lozinka" required>
+								<small id="passwordHelpBlock" class="form-text text-muted">
+								  	Lozinka mora imati 8-20 karaktera.
+								</small>
+								<div class="invalid-feedback" id="izmenaInvalid">Neodgovarajuća dužina lozinke.</div>
+							</div>
+					    	<div class="col">
+					    		<label for="lozinka2">Potvrdite lozinku</label>
+								<input type="password" v-model="potvrdaLozinke" class="form-control" v-bind:class="{ nePoklapajuSe : !poklapajuSeLozinke }" id="lozinka2" placeholder="Lozinka">
+								<div class="invalid-feedback" v-bind:class="{ 'd-block' : !poklapajuSeLozinke }" id="dodavanjeInvalid">Lozinke se ne poklapaju!</div>
+					    	</div>
+					  	</div>
+					  	<div class="form-row">
+					    	<div class="col">
+					    	 	<label for="ime" class="mt-1">Ime</label>
+								<input type="text" v-model="noviKorisnik.ime" class="form-control" id="ime" placeholder="Ime" required>
+								<div class="invalid-feedback" id="izmenaInvalid">Niste uneli ime.</div>
+							</div>
+					    	<div class="col">
+					    		<label for="prezime" class="mt-1">Prezime</label>
+								<input type="text" v-model="noviKorisnik.prezime" class="form-control" id="prezime" placeholder="Prezime" required>
+					    		<div class="invalid-feedback" id="izmenaInvalid">Niste uneli prezime.</div>
+					    	</div>
+					    	<div class="col">
+					    		<label for="uloga" class="mt-1">Uloga</label>
+					    		<select class="custom-select mt-0" v-model="noviKorisnik.uloga" id="uloga" required>
+							    	<option value="ADMIN">Admin</option>
+							    	<option value="KORISNIK">Korisnik</option>
+							  	</select>
+					    		<div class="invalid-feedback" id="izmenaInvalid">Niste odabrali ulogu.</div>
+					    	</div>
+					  	</div>
+					  	<div class="form-row">
+					    	<div class="col">
+					    		<label for="organ" class="mt-1">Organizacija</label>
+								<select class="custom-select mt-0" v-model="noviKorisnik.organizacija" id="organ" disabled required>
+							    	<option v-for="org in organizacije" :value="org.ime">
+										{{ org.ime }}
+							    	</option>
+							  	</select>
+							</div>
+					  	</div>
+					  	<button class="btn btn-lg btn-primary btn-block mt-4" type="submit" v-bind:disabled="izabraniKorisnik.ime == noviKorisnik.ime && izabraniKorisnik.prezime == noviKorisnik.prezime && izabraniKorisnik.uloga == noviKorisnik.uloga && izabraniKorisnik.lozinka == noviKorisnik.lozinka">
+					  		Sačuvaj izmene
+					  	</button>
+					</form>
+	      		</div>
+	      		<div class="modal-footer">
+	        		<button type="button" class="btn btn-secondary mr-auto" data-dismiss="modal">Nazad</button>
+	      		</div>
+	    	</div>
+		</div>
+	</div>
+	
+	<div class="modal fade" id="izmenaKatModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg" role="document">
+	    	<div class="modal-content">
+	      		<div class="modal-header">
+	        		<h5 class="modal-title">Podaci o kategoriji</h5>
+	        		<button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+	      		</div>
+	      		<div class="modal-body">
+	        		<form class="needs-validation mb-4" v-bind:class="{ 'was-validated': submitovano }" novalidate @submit.prevent="izmenaKat" id="forma-izmena-kat">
+					  	<div class="form-row mb-3">
+					  		<div class="col">
+					    	 	<label for="imekat">Ime kategorije</label>
+								<input type="text" v-model="novaKategorija.ime" class="form-control" id="imekat" placeholder="Ime kategorije" required>
+								<div class="invalid-feedback" id="izmenaInvalid">Niste uneli ime.</div>
+							</div>
+						</div>
+					  	<div class="form-row">
+					    	<div class="col">
+					    	 	<label for="brjez">Broj jezgara</label>
+								<input type="number" v-model="novaKategorija.brojJezgara" min="1" class="form-control" id="brjez" placeholder="Broj jezgara" required>
+								<div class="invalid-feedback" id="izmenaInvalid">Niste uneli broj jezgara.</div>
+							</div>
+							<div class="col">
+					    	 	<label for="ram">RAM</label>
+								<input type="number" v-model="novaKategorija.RAM" min="1" class="form-control" id="ram" placeholder="RAM" required>
+								<div class="invalid-feedback" id="izmenaInvalid">Niste uneli RAM.</div>
+							</div>
+							<div class="col">
+					    	 	<label for="gpu">GPU jezgra</label>
+								<input type="number" v-model="novaKategorija.GPUJezgra" min="0" step=".1" class="form-control" id="gpu" placeholder="GPU jezgra">
+								<div class="invalid-feedback" id="izmenaInvalid">Niste uneli GPU jezgra.</div>
+							</div>
+					  	</div>
+					  	<div v-if=!uspesnaIzmena class="alert alert-danger mt-4" role="alert">
+							<p class="mb-0"><b>Greška!</b> Ime je zauzeto.</p>
+						</div>
+					  	<button class="btn btn-lg btn-primary btn-block mt-4" type="submit" v-bind:disabled="izabranaKategorija.ime == novaKategorija.ime && izabranaKategorija.brojJezgara == novaKategorija.brojJezgara && izabranaKategorija.RAM == novaKategorija.RAM && izabranaKategorija.GPUJezgra == novaKategorija.GPUJezgra">
+					  		Sačuvaj izmene
+					  	</button>
+					</form>
+	      		</div>
+	      		<div class="modal-footer">
+	        		<button type="button" class="btn btn-secondary mr-auto" data-dismiss="modal">Nazad</button>
+	      		</div>
+	    	</div>
+		</div>
+	</div>
 </div>
 `
 	,
@@ -211,6 +388,18 @@ Vue.component("super-admin", {
 			.post('korisniciOrganizacije', this.izabranaOrganizacija)
 	        .then(response => (this.korisniciOrganizacije = response.data))
 	        .catch(function (error) { console.log(error); });
+			this.uspesnaIzmena = true;
+			this.submitovano = false;
+		},
+		izaberiKor: function (k) {
+			this.izabraniKorisnik = JSON.parse(JSON.stringify(k));
+			this.noviKorisnik = JSON.parse(JSON.stringify(k));
+			this.uspesnaIzmena = true;
+			this.submitovano = false;
+		},
+		izaberiKat: function (kat) {
+			this.izabranaKategorija = JSON.parse(JSON.stringify(kat));
+			this.novaKategorija = JSON.parse(JSON.stringify(kat));
 			this.uspesnaIzmena = true;
 			this.submitovano = false;
 		},
@@ -249,6 +438,96 @@ Vue.component("super-admin", {
 			} else {
 				this.uspesnaIzmena = true;
 			}
+		},
+		izmenaKor : function () {
+			this.proveriLozinke();
+			this.submitovano = true;
+			if (document.getElementById('forma-izmena-kor').checkValidity() === true && this.poklapajuSeLozinke) {
+				axios
+				.post('izmeniKor', [this.izabraniKorisnik, this.noviKorisnik])
+				.then(response => {
+					this.uspesnaIzmena = response.data;
+					
+					if (this.uspesnaIzmena) {
+						axios
+				        .get('ucitajKorisnike')
+				        .then(response => (this.korisnici = response.data))
+				        .catch(function (error) { console.log(error); });
+						axios
+				        .get('ucitajOrganizacije')
+				        .then(response => (this.organizacije = response.data))
+				        .catch(function (error) { console.log(error); });
+						
+						toast("Uspešno izmenjen korisnik.");
+						$("#izmenaKorisnikaModal .close").click();
+						this.submitovano = false;
+					}
+				})
+				.catch(function (error) { console.log(error); });
+			} else {
+				this.uspesnaIzmena = true;
+			}
+		},
+		izmenaKat : function () {
+			this.submitovano = true;
+			if (document.getElementById('forma-izmena-kat').checkValidity() === true) {
+				axios
+				.post('izmeniKat', [this.izabranaKategorija, this.novaKategorija])
+				.then(response => {
+					this.uspesnaIzmena = response.data;
+					
+					if (this.uspesnaIzmena) {
+						axios
+				        .get('ucitajKategorije')
+				        .then(response => (this.kategorije = response.data))
+				        .catch(function (error) { console.log(error); });
+						axios
+				        .get('ucitajMasine')
+				        .then(response => (this.masine = response.data))
+				        .catch(function (error) { console.log(error); });
+						axios
+				        .get('ucitajDiskove')
+				        .then(response => (this.diskovi = response.data))
+				        .catch(function (error) { console.log(error); });
+						
+						toast("Uspešno izmenjena kategorija.");
+						$("#izmenaKatModal .close").click();
+						this.submitovano = false;
+					}
+				})
+				.catch(function (error) { console.log(error); });
+			} else {
+				this.uspesnaIzmena = true;
+			}
+		},
+		obrisiKorisnika : function (k) {
+			if (confirm("Da li stvarno želite da uklonite ovog korisnika?")) {
+				axios
+				.post('obrisiKorisnika', k)
+				.then(response => {
+					toast("Uspešno uklonjen korisnik.");
+					this.$router.go();
+				})
+				.catch(function (error) { console.log(error); });
+			}
+			$("#izmenaKorisnikaModal .close").click();
+		},
+		obrisiKategoriju : function (kat) {
+			var hoceDaBrise = confirm("Da li stvarno želite da uklonite ovu kategoriju?");
+			if (hoceDaBrise == true) {
+				axios
+				.post('obrisiKategoriju', kat)
+				.then(response => {
+					if (!response.data) {
+						alert("Ne možete ukloniti ovu kategoriju jer ona ima dodeljene virtuelne mašine.");
+					} else {
+						toast("Uspešno uklonjena kategorija.");
+						this.$router.go();
+					}
+				})
+				.catch(function (error) { console.log(error); });
+			}
+			this.$router.go();
 		},
 		promeniSliku(e) {
 			var files = e.target.files || e.dataTransfer.files;
@@ -291,5 +570,8 @@ Vue.component("super-admin", {
         .then(response => (this.korisnici = response.data))
         .catch(function (error) { console.log(error); });
 		axios
+		.get('ucitajKategorije')
+        .then(response => (this.kategorije = response.data))
+        .catch(function (error) { console.log(error); });
 	}
 });

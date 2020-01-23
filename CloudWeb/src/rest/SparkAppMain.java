@@ -36,6 +36,9 @@ public class SparkAppMain {
 	private static Gson g = new Gson();
 	private static ArrayList<Korisnik> korisnici = new ArrayList<Korisnik>();
 	private static ArrayList<Organizacija> organizacije = new ArrayList<Organizacija>();
+	private static ArrayList<KategorijaVM> kategorije = new ArrayList<KategorijaVM>();
+	private static ArrayList<VM> masine = new ArrayList<VM>();
+	private static ArrayList<Disk> diskovi = new ArrayList<Disk>();
 
 	public static void main(String[] args) throws Exception {
 		port(8080);
@@ -140,6 +143,65 @@ public class SparkAppMain {
 			return true;
 		});
 		
+		post("/izmeniKor", (req, res) -> {
+			Korisnik[] parametri = g.fromJson(req.body(), Korisnik[].class);
+			Korisnik stari = parametri[0];
+			Korisnik izmenjeni = parametri[1];
+			
+			for (int i = 0; i < korisnici.size(); i++) {
+				if (korisnici.get(i).getEmail().equals(stari.getEmail())) {
+					korisnici.set(i, izmenjeni);
+					
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
+		post("/izmeniKat", (req, res) -> {
+			KategorijaVM[] parametri = g.fromJson(req.body(), KategorijaVM[].class);
+			KategorijaVM stara = parametri[0];
+			KategorijaVM izmenjena = parametri[1];
+			
+			for (KategorijaVM ka : kategorije) {
+				if (!ka.getIme().equals(stara.getIme())) {
+					if (ka.getIme().equals(izmenjena.getIme())) {
+						return false;
+					}
+				}
+			}
+			for (VM mas : masine) {
+				if (!mas.getIme().equals(stara.getIme())) {
+					if (mas.getIme().equals(izmenjena.getIme())) {
+						return false;
+					}
+				}
+			}
+			for (Disk d : diskovi) {
+				if (d.getIme().equals(izmenjena.getIme())) {
+					return false;
+				}
+			}
+			
+			for (int i = 0; i < kategorije.size(); i++) {
+				if (kategorije.get(i).getIme().equals(stara.getIme())) {
+					
+					kategorije.set(i, izmenjena);
+
+					for (VM masina : masine) {
+						if (masina.getKategorija().getIme().equals(stara.getIme())) {
+							masina.setKategorija(izmenjena);
+						}
+					}
+					
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
 		post("/dodajOrg", (req, res) -> {
 			Organizacija nova = g.fromJson(req.body(), Organizacija.class);
 			
@@ -154,6 +216,89 @@ public class SparkAppMain {
 			return true;
 		});
 		
+		post("/dodajKor", (req, res) -> {
+			Korisnik novi = g.fromJson(req.body(), Korisnik.class);
+			
+			for (Korisnik k : korisnici) {
+				if (k.getEmail().equals(novi.getEmail())) {
+					return false;
+				}
+			}
+
+			for (Organizacija o : organizacije) {
+				if (o.getIme().equals(novi.getOrganizacija())) {
+					o.getKorisnici().add(novi.getEmail());
+					break;
+				}
+			}
+
+			korisnici.add(novi);
+			upisiUFajl();
+			return true;
+		});
+		
+		post("/dodajKat", (req, res) -> {
+			KategorijaVM nova = g.fromJson(req.body(), KategorijaVM.class);
+			
+			for (KategorijaVM k : kategorije) {
+				if (k.getIme().equals(nova.getIme())) {
+					return false;
+				}
+			}
+			for (VM mas : masine) {
+				if (mas.getIme().equals(nova.getIme())) {
+					return false;
+				}
+			}
+			for (Disk d : diskovi) {
+				if (d.getIme().equals(nova.getIme())) {
+					return false;
+				}
+			}
+			
+			kategorije.add(nova);
+			upisiUFajl();
+			return true;
+		});
+		
+		post("/obrisiKorisnika", (req, res) -> {
+			Korisnik zaBrisanje = g.fromJson(req.body(), Korisnik.class);
+			
+			for (int i = 0; i < korisnici.size(); i++) {
+				if (korisnici.get(i).getEmail().equals(zaBrisanje.getEmail())) {
+					korisnici.remove(i);
+					
+					for (Organizacija org : organizacije) {
+						if (org.getIme().equals(zaBrisanje.getOrganizacija())) {
+							org.getKorisnici().remove(zaBrisanje.getIme());
+						}
+					}
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
+		post("/obrisiKategoriju", (req, res) -> {
+			KategorijaVM zaBrisanje = g.fromJson(req.body(), KategorijaVM.class);
+			
+			for (int i = 0; i < kategorije.size(); i++) {
+				if (kategorije.get(i).getIme().equals(zaBrisanje.getIme())) {
+					
+					for (VM masina : masine) {
+						if (masina.getKategorija().getIme().equals(zaBrisanje.getIme())) {
+							return false;
+						}
+					}
+					kategorije.remove(i);
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
 		get("/ucitajOrganizacije", (req, res) -> {
 			res.type("application/json");
 			return g.toJson(organizacije);
@@ -162,6 +307,11 @@ public class SparkAppMain {
 		get("/ucitajKorisnike", (req, res) -> {
 			res.type("application/json");
 			return g.toJson(korisnici);
+		});
+		
+		get("/ucitajKategorije", (req, res) -> {
+			res.type("application/json");
+			return g.toJson(kategorije);
 		});
 		
 		get("/logout", (req, res) -> {
@@ -181,6 +331,12 @@ public class SparkAppMain {
 		korisnici = new ArrayList<Korisnik>(Arrays.asList(korisniciLista));
 		Organizacija[] organizacijeLista = g.fromJson(new FileReader("resursi" + sep + "organizacije.json"), Organizacija[].class);
 		organizacije = new ArrayList<Organizacija>(Arrays.asList(organizacijeLista));
+		KategorijaVM[] kategorijeLista = g.fromJson(new FileReader("resursi" + sep + "kategorije.json"), KategorijaVM[].class);
+		kategorije = new ArrayList<KategorijaVM>(Arrays.asList(kategorijeLista));
+		VM[] masineLista = g.fromJson(new FileReader("resursi" + sep + "masine.json"), VM[].class);
+		masine = new ArrayList<VM>(Arrays.asList(masineLista));
+		Disk[] diskoviLista = g.fromJson(new FileReader("resursi" + sep + "diskovi.json"), Disk[].class);
+		diskovi = new ArrayList<Disk>(Arrays.asList(diskoviLista));
 	}
 
 	private static void upisiUFajl() throws IOException {
@@ -195,5 +351,20 @@ public class SparkAppMain {
 				new FileWriter(new File("." + sep + "resursi" + sep + "organizacije.json")));
 		writerOrganizacije.write(g.toJson(organizacije));
 		writerOrganizacije.close();
+		
+		PrintWriter writerKategorije = new PrintWriter(
+				new FileWriter(new File("." + sep + "resursi" + sep + "kategorije.json")));
+		writerKategorije.write(g.toJson(kategorije));
+		writerKategorije.close();
+		
+		PrintWriter writerMasine = new PrintWriter(
+				new FileWriter(new File("." + sep + "resursi" + sep + "masine.json")));
+		writerMasine.write(g.toJson(masine));
+		writerMasine.close();
+		
+		PrintWriter writerDiskovi = new PrintWriter(
+				new FileWriter(new File("." + sep + "resursi" + sep + "diskovi.json")));
+		writerDiskovi.write(g.toJson(diskovi));
+		writerDiskovi.close();
 	}
 }
