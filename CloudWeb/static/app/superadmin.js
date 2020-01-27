@@ -12,6 +12,7 @@ Vue.component("super-admin", {
 	    	organizacije : [],
 	    	korisnici : [],
 	    	kategorije : [],
+	    	masine : [],
 	    	izabranaOrganizacija : {},
 	    	novaOrganizacija : {},
 	    	submitovano : false,
@@ -21,6 +22,8 @@ Vue.component("super-admin", {
 	    	noviKorisnik : {},
 	    	izabranaKategorija : {},
 	    	novaKategorija : {},
+	    	izabranaMasina : {},
+	    	novaMasina : {},
 	    	potvrdaLozinke : "",
 	    	istaJeKategorija : true,
 	    	istaJeKategorija : true,
@@ -67,6 +70,31 @@ Vue.component("super-admin", {
 	</nav>
 
 	<div class="tab-content">
+		<div class="tab-pane fade" id="pills-vm" role="tabpanel" >
+			<table class="table table-hover table-striped">
+			  	<thead class="thead-light">
+			    	<tr>
+				      	<th scope="col" width="17%">Ime</th>
+				      	<th scope="col" width="17%">Broj jezgara</th>
+				      	<th scope="col" width="17%">RAM</th>
+				      	<th scope="col" width="17%">GPU jezgra</th>
+				      	<th scope="col" width="22%">Organizacija</th>
+				      	<th scope="col" width="10%"></th>
+			    	</tr>
+			  	</thead>
+			  	<tbody>
+			  		<tr v-for="vm in filtriraneMasine" data-toggle="modal" data-target="#izmenaVMModal" v-on:click="izaberiVM(vm)">
+				      	<td width="17%">{{ vm.ime }}</td>
+				      	<td width="17%">{{ vm.brojJezgara }}</td>
+				      	<td width="17%">{{ vm.RAM }}</td>
+				      	<td width="17%">{{ vm.GPUJezgra }}</td>
+				      	<td width="22%">{{ vm.organizacija }}</td>
+				      	<td width="10%"><button class="btn btn-danger btn-sm" v-on:click="obrisiMasinu(vm)">Ukloni</button></td>
+			    	</tr>
+			  	</tbody>
+			</table>
+			<router-link :to="{ path: 'dodavanjeMasine'}" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeMasine">Dodaj virtuelnu mašinu</router-link>
+		</div>
 		<div class="tab-pane fade show active" id="pills-organizacije" role="tabpanel">
 			<table class="table table-hover table-striped">
 			  	<thead class="thead-light">
@@ -252,6 +280,85 @@ Vue.component("super-admin", {
 		</div>
 	</div>
 	
+	<div class="modal fade" id="izmenaVMModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg" role="document">
+	    	<div class="modal-content">
+	      		<div class="modal-header">
+	        		<h5 class="modal-title">Podaci o virtuelnoj mašini</h5>
+	        		<button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+	      		</div>
+	      		<div class="modal-body">
+	        		<form class="needs-validation mb-4" v-bind:class="{ 'was-validated': submitovano }" novalidate @submit.prevent="izmenaVM" id="forma-izmena-vm">
+					  	<div class="form-row mb-3">
+					  		<div class="col">
+					    	 	<label for="imevm">Ime</label>
+								<input type="text" v-model="novaMasina.ime" class="form-control" id="imevm" placeholder="Ime" required>
+								<div class="invalid-feedback" id="izmenaInvalid">Niste uneli ime.</div>
+							</div>
+						</div>
+						<div class="form-row">
+					    	<div class="col">
+					    	 	<label for="kateg" class="mt-1">Kategorija</label>
+									<select class="custom-select mt-0" v-model="novaMasina.kategorija" v-on:change="popuniVM" id="kateg" required>
+								    	<option v-for="kat in kategorije" :value="kat">
+											{{ kat.ime }}
+								    	</option>
+								  	</select>
+							  	<div class="invalid-feedback" id="izmenaInvalid">Niste izabrali kategoriju.</div>
+					    	</div>
+					  	</div>
+					  	<div class="form-row">
+					    	<div class="col">
+					    	 	<label for="brojjez">Broj jezgara</label>
+								<input type="number" v-model="novaMasina.brojJezgara" min="1" class="form-control" id="brojjez" placeholder="Broj jezgara" disabled required>
+							</div>
+							<div class="col">
+					    	 	<label for="vmram">RAM</label>
+								<input type="number" v-model="novaMasina.RAM" min="1" class="form-control" id="vmram" placeholder="RAM" disabled required>
+							</div>
+							<div class="col">
+					    	 	<label for="vmgpu">GPU jezgra</label>
+								<input type="number" v-model="novaMasina.GPUJezgra" min="0" step=".1" class="form-control" id="vmgpu" placeholder="GPU jezgra" disabled required>
+							</div>
+					  	</div>
+					  	<div class="form-row">
+					    	<div class="col">
+					    		<label for="vmorgan" class="mt-1">Organizacija</label>
+								<select class="custom-select mt-0" v-model="novaMasina.organizacija" id="vmorgan" disabled required>
+							    	<option v-for="org in organizacije" :value="org.ime">
+										{{ org.ime }}
+							    	</option>
+							  	</select>
+							</div>
+					  	</div>
+					  	<div class="form-row">
+					  		<div class="col">
+					    		<label for="mojiDiskovi" class="mt-3">Izaberi diskove</label>
+								<ul class="list-group list-group-flush" id="mojiDiskovi">
+								    <li v-for="di in diskoviIzIsteOrg" class="list-group-item">
+										<div class="custom-control custom-checkbox">
+								        	<input type="checkbox" v-bind:value="di.ime" v-model="novaMasina.diskovi" class="custom-control-input" v-bind:id="di.ime" :checked="sadrziDisk(di.ime)">
+								        	<label class="custom-control-label" v-bind:for="di.ime">{{ di.ime }}</label>
+										</div>
+								    </li>
+								</ul>
+							</div>
+					  	</div>
+					  	<div v-if=!uspesnaIzmena class="alert alert-danger mt-4" role="alert">
+							<p class="mb-0"><b>Greška!</b> Ime je zauzeto.</p>
+						</div>
+					  	<button class="btn btn-lg btn-primary btn-block mt-4" type="submit" v-bind:disabled="izabranaMasina.ime == novaMasina.ime && istaJeKategorija && novaMasina.diskovi == izabranaMasina.diskovi">
+					  		Sačuvaj izmene
+					  	</button>
+					</form>
+	      		</div>
+	      		<div class="modal-footer">
+	        		<button type="button" class="btn btn-secondary mr-auto" data-dismiss="modal">Nazad</button>
+	      		</div>
+	    	</div>
+		</div>
+	</div>
+	
 	<div class="modal fade" id="izmenaKorisnikaModal" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-lg" role="document">
 	    	<div class="modal-content">
@@ -403,6 +510,21 @@ Vue.component("super-admin", {
 			this.uspesnaIzmena = true;
 			this.submitovano = false;
 		},
+		izaberiVM: function (vm) {
+			this.izabranaMasina = JSON.parse(JSON.stringify(vm));
+ 			this.novaMasina = JSON.parse(JSON.stringify(vm));
+ 			axios
+			.post('diskoviIzIsteOrg', this.izabranaMasina)
+	        .then(response => (this.diskoviIzIsteOrg = response.data))
+	        .catch(function (error) { console.log(error); });
+			this.uspesnaIzmena = true;
+			this.submitovano = false;
+			if (this.izabranaMasina.kategorija.ime == this.novaMasina.kategorija.ime) {
+	    		this.istaJeKategorija = true;
+	    	} else {
+	    		this.istaJeKategorija = false;
+	    	}
+		},
 		izmenaOrg : function () {
 			this.submitovano = true;
 			if (document.getElementById('forma-izmena-org').checkValidity() === true) {
@@ -500,6 +622,38 @@ Vue.component("super-admin", {
 				this.uspesnaIzmena = true;
 			}
 		},
+		izmenaVM : function () {
+			this.submitovano = true;
+			if (document.getElementById('forma-izmena-vm').checkValidity() === true) {
+				axios
+				.post('izmeniVM', [this.izabranaMasina, this.novaMasina])
+				.then(response => {
+					this.uspesnaIzmena = response.data;
+					
+					if (this.uspesnaIzmena) {
+						axios
+				        .get('ucitajMasine')
+				        .then(response => (this.masine = response.data))
+				        .catch(function (error) { console.log(error); });
+						axios
+				        .get('ucitajOrganizacije')
+				        .then(response => (this.organizacije = response.data))
+				        .catch(function (error) { console.log(error); });
+						axios
+				        .get('ucitajDiskove')
+				        .then(response => (this.diskovi = response.data))
+				        .catch(function (error) { console.log(error); });
+						
+						toast("Uspešno izmenjena virtuelna mašina.");
+						$("#izmenaVMModal .close").click();
+						this.submitovano = false;
+					}
+				})
+				.catch(function (error) { console.log(error); });
+			} else {
+				this.uspesnaIzmena = true;
+			}
+		},
 		obrisiKorisnika : function (k) {
 			if (confirm("Da li stvarno želite da uklonite ovog korisnika?")) {
 				axios
@@ -555,6 +709,16 @@ Vue.component("super-admin", {
 	            this.novaOrganizacija.logoPutanja = filename;
 	        }
 	    },
+	    popuniVM() {
+	    	this.novaMasina.brojJezgara = this.novaMasina.kategorija.brojJezgara;
+	    	this.novaMasina.RAM = this.novaMasina.kategorija.RAM;
+	    	this.novaMasina.GPUJezgra = this.novaMasina.kategorija.GPUJezgra;
+	    	if (this.izabranaMasina.kategorija.ime == this.novaMasina.kategorija.ime) {
+	    		this.istaJeKategorija = true;
+	    	} else {
+	    		this.istaJeKategorija = false;
+	    	}
+	    },
 	},
 	mounted () {
 		axios
@@ -572,6 +736,10 @@ Vue.component("super-admin", {
 		axios
 		.get('ucitajKategorije')
         .then(response => (this.kategorije = response.data))
+        .catch(function (error) { console.log(error); });
+		axios
+		.get('ucitajMasine')
+        .then(response => (this.masine = response.data))
         .catch(function (error) { console.log(error); });
 	}
 });
