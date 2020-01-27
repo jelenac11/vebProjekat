@@ -47,8 +47,8 @@ public class SparkAppMain {
 
 		staticFiles.externalLocation(new File("." + sep + "static").getCanonicalPath());
 
-		korisnici.add(new Korisnik("super@admin", "sa", "Super", "Admin", "nema", Uloga.SUPER_ADMIN));
-		//ucitajFajlove();
+		//korisnici.add(new Korisnik("super@admin", "sa", "Super", "Admin", "nema", Uloga.SUPER_ADMIN));
+		ucitajFajlove();
 
 		post("/login", (req, res) -> {
 			Korisnik ulog = g.fromJson(req.body(), Korisnik.class);
@@ -202,6 +202,66 @@ public class SparkAppMain {
 			return true;
 		});
 		
+		post("/izmeniVM", (req, res) -> {
+			VM[] parametri = g.fromJson(req.body(), VM[].class);
+			VM stara = parametri[0];
+			VM izmenjena = parametri[1];
+
+			for (KategorijaVM ka : kategorije) {
+				if (!ka.getIme().equals(stara.getIme())) {
+					if (ka.getIme().equals(izmenjena.getIme())) {
+						return false;
+					}
+				}
+			}
+			for (VM mas : masine) {
+				if (!mas.getIme().equals(stara.getIme())) {
+					if (mas.getIme().equals(izmenjena.getIme())) {
+						return false;
+					}
+				}
+			}
+			for (Disk d : diskovi) {
+				if (d.getIme().equals(izmenjena.getIme())) {
+					return false;
+				}
+			}
+			
+			for (int i = 0; i < masine.size(); i++) {
+				if (masine.get(i).getIme().equals(stara.getIme())) {
+					masine.set(i, izmenjena);
+					
+					for (Organizacija org : organizacije) {
+						for (int j = 0; j < org.getResursi().size(); j++) {
+							if (org.getResursi().get(j).equals(stara.getIme())) {
+								org.getResursi().set(j, izmenjena.getIme());
+							}
+						}
+					}
+					
+					for (String dstr : stara.getDiskovi()) {
+						for (Disk d : diskovi) {
+							if (d.getIme().equals(dstr)) {
+								d.setVirtuelnaMasina("");
+							}
+						}
+					}
+					
+					for (String dstr : izmenjena.getDiskovi()) {
+						for (Disk d : diskovi) {
+							if (d.getIme().equals(dstr)) {
+								d.setVirtuelnaMasina(izmenjena.getIme());
+							}
+						}
+					}
+					
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
 		post("/dodajOrg", (req, res) -> {
 			Organizacija nova = g.fromJson(req.body(), Organizacija.class);
 			
@@ -261,6 +321,38 @@ public class SparkAppMain {
 			return true;
 		});
 		
+		post("/dodajVM", (req, res) -> {
+			VM nova = g.fromJson(req.body(), VM.class);
+			
+			for (KategorijaVM k : kategorije) {
+				if (k.getIme().equals(nova.getIme())) {
+					return false;
+				}
+			}
+			for (VM mas : masine) {
+				if (mas.getIme().equals(nova.getIme())) {
+					return false;
+				}
+			}
+			for (Disk d : diskovi) {
+				if (d.getIme().equals(nova.getIme())) {
+					return false;
+				}
+			}
+			
+			for (Organizacija organ : organizacije) {
+				if (organ.getIme().equals(nova.getOrganizacija())) {
+					organ.getResursi().add(nova.getIme());
+				}
+			}
+			
+			// TODO : TREBA DA SE DODAJU I DISKOVI
+			// TODO : razmisli mozda treba jos nesto, sad me mrzi da razmisljam
+			masine.add(nova);
+			upisiUFajl();
+			return true;
+		});
+		
 		post("/obrisiKorisnika", (req, res) -> {
 			Korisnik zaBrisanje = g.fromJson(req.body(), Korisnik.class);
 			
@@ -273,6 +365,32 @@ public class SparkAppMain {
 							org.getKorisnici().remove(zaBrisanje.getIme());
 						}
 					}
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
+		post("/obrisiMasinu", (req, res) -> {
+			VM zaBrisanje = g.fromJson(req.body(), VM.class);
+			
+			for (int i = 0; i < masine.size(); i++) {
+				if (masine.get(i).getIme().equals(zaBrisanje.getIme())) {
+					masine.remove(i);
+
+					for (Organizacija org : organizacije) {
+						if (org.getIme().equals(zaBrisanje.getOrganizacija())) {
+							org.getResursi().remove(zaBrisanje.getIme());
+						}
+					}
+					
+					for (Disk dis : diskovi) {
+						if (dis.getVirtuelnaMasina().equals(zaBrisanje.getIme())) {
+							dis.setVirtuelnaMasina("");
+						}
+					}
+					
 					upisiUFajl();
 					break;
 				}
@@ -299,6 +417,13 @@ public class SparkAppMain {
 			return true;
 		});
 		
+		post("/masineIzIsteOrg", (req, res) -> {
+			res.type("application/json");
+			Disk disk = g.fromJson(req.body(), Disk.class);
+			ArrayList<VM> masineIzIsteOrg = new ArrayList<VM>();
+			return g.toJson(masineIzIsteOrg);
+		});
+		
 		get("/ucitajOrganizacije", (req, res) -> {
 			res.type("application/json");
 			return g.toJson(organizacije);
@@ -312,6 +437,11 @@ public class SparkAppMain {
 		get("/ucitajKategorije", (req, res) -> {
 			res.type("application/json");
 			return g.toJson(kategorije);
+		});
+		
+		get("/ucitajMasine", (req, res) -> {
+			res.type("application/json");
+			return g.toJson(masine);
 		});
 		
 		get("/logout", (req, res) -> {
