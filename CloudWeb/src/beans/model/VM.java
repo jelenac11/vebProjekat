@@ -15,10 +15,12 @@ public class VM {
 	public VM() {
 		diskovi = new ArrayList<String>();
 		listaAktivnosti = new ArrayList<Aktivnost>();
+		kategorija = new KategorijaVM();
 	}
-
+	
 	public VM(String ime, KategorijaVM kategorija, int brojJezgara, int rAM, double gPUJezgra, String organizacija,
 			ArrayList<String> diskovi, ArrayList<Aktivnost> listaAktivnosti) {
+		super();
 		this.ime = ime;
 		this.kategorija = kategorija;
 		this.brojJezgara = brojJezgara;
@@ -43,6 +45,9 @@ public class VM {
 
 	public void setKategorija(KategorijaVM kategorija) {
 		this.kategorija = kategorija;
+		this.brojJezgara = kategorija.getBrojJezgara();
+		this.RAM = kategorija.getRAM();
+		this.GPUJezgra = kategorija.getGPUJezgra();
 	}
 
 	public int getBrojJezgara() {
@@ -68,7 +73,7 @@ public class VM {
 	public void setGPUJezgra(double GPUJezgra) {
 		this.GPUJezgra = GPUJezgra;
 	}
-	
+
 	public String getOrganizacija() {
 		return organizacija;
 	}

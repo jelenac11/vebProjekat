@@ -48,7 +48,7 @@ Vue.component("izmena-profila", {
 				</div>
 			  	<button class="btn btn-lg btn-primary btn-block mt-4" type="submit">Izmeni podatke</button>
 			</form>
-			<router-link :to="{ path: this.tip }" class="btn btn-secondary">Nazad</router-link>
+			<router-link :to="{ path: 'virtuelnemasine' }" class="btn btn-secondary">Nazad</router-link>
 		</div>
 	</div>
 </div>	

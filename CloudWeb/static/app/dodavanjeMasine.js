@@ -73,7 +73,7 @@ Vue.component("dodavanje-masine", {
 			  		Dodaj virtuelnu mašinu
 			  	</button>
 			</form>
-			<router-link :to="{ path: 'superadmin' }" class="btn btn-secondary">Nazad</router-link>
+			<router-link :to="{ path: 'virtuelnemasine' }" class="btn btn-secondary">Nazad</router-link>
 		</div>
 	</div>
 </div>	
@@ -89,7 +89,7 @@ Vue.component("dodavanje-masine", {
 					this.uspesnoDodavanje = response.data;
 					
 					if (this.uspesnoDodavanje) {
-						this.$router.replace({ path: 'superadmin' });
+						this.$router.replace({ path: 'virtuelnemasine' });
 					}
 				})
 				.catch(function (error) { console.log(error); });

@@ -54,19 +54,7 @@ Vue.component("login", {
 		validiraj : function (uspesan) {
 			this.uspesanLogin = uspesan;
 			if (this.uspesanLogin) { 
-				axios
-				.get('ulogovan')
-				.then(response => {
-					this.korisnik = response.data;
-					if (this.korisnik.uloga == "SUPER_ADMIN") {
-						this.$router.replace({ path: 'superadmin' });
-					} else if (this.korisnik.uloga == "ADMIN") {
-						// admin
-					} else if (this.korisnik.uloga == "KORISNIK") {
-						// korisnik
-					}
-				})
-				.catch(function (error) { console.log(error); });
+				this.$router.replace({ path: 'virtuelnemasine' });
 			}
 		}
 	} 

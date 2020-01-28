@@ -47,7 +47,7 @@ Vue.component("dodavanje-organizacije", {
 			  		Dodaj organizaciju
 			  	</button>
 			</form>
-			<router-link :to="{ path: 'superadmin' }" class="btn btn-secondary">Nazad</router-link>
+			<router-link :to="{ path: 'organizacije' }" class="btn btn-secondary">Nazad</router-link>
 		</div>
 	</div>
 </div>	
@@ -66,7 +66,7 @@ Vue.component("dodavanje-organizacije", {
 					this.uspesnoDodavanje = response.data;
 					
 					if (this.uspesnoDodavanje) {
-						this.$router.replace({ path: 'superadmin' });
+						this.$router.replace({ path: 'organizacije' });
 					}
 				})
 				.catch(function (error) { console.log(error); });
