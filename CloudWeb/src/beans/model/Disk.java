@@ -5,16 +5,18 @@ public class Disk {
 	private TipDiska tip;
 	private double kapacitet;
 	private String virtuelnaMasina;
+	private String organizacija;
 	
 	public Disk() {
 		
 	}
 	
-	public Disk(String ime, TipDiska tip, double kapacitet, String virtuelnaMasina) {
+	public Disk(String ime, TipDiska tip, double kapacitet, String virtuelnaMasina, String organizacija) {
 		this.ime = ime;
 		this.tip = tip;
 		this.kapacitet = kapacitet;
 		this.virtuelnaMasina = virtuelnaMasina;
+		this.organizacija = organizacija;
 	}
 
 	public String getIme() {
@@ -47,6 +49,14 @@ public class Disk {
 
 	public void setVirtuelnaMasina(String virtuelnaMasina) {
 		this.virtuelnaMasina = virtuelnaMasina;
+	}
+
+	public String getOrganizacija() {
+		return organizacija;
+	}
+
+	public void setOrganizacija(String organizacija) {
+		this.organizacija = organizacija;
 	}
 
 	@Override

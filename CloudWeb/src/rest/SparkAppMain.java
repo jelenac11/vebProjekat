@@ -5,7 +5,6 @@ import static spark.Spark.port;
 import static spark.Spark.post;
 import static spark.Spark.staticFiles;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -14,11 +13,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
@@ -26,9 +22,7 @@ import beans.model.Disk;
 import beans.model.KategorijaVM;
 import beans.model.Korisnik;
 import beans.model.Organizacija;
-import beans.model.Uloga;
 import beans.model.VM;
-import spark.Request;
 import spark.Session;
 
 public class SparkAppMain {
@@ -46,8 +40,8 @@ public class SparkAppMain {
 		String sep = System.getProperty("file.separator");
 
 		staticFiles.externalLocation(new File("." + sep + "static").getCanonicalPath());
-
-		//korisnici.add(new Korisnik("super@admin", "sa", "Super", "Admin", "nema", Uloga.SUPER_ADMIN));
+		
+//		korisnici.add(new Korisnik("super@admin", "sa", "Super", "Admin", "nema", Uloga.SUPER_ADMIN));
 		ucitajFajlove();
 
 		post("/login", (req, res) -> {
@@ -65,7 +59,7 @@ public class SparkAppMain {
 			}
 			return false;
 		});
-		
+
 		get("/ulogovan", (req, res) -> {
 			res.type("application/json");
 			Session ss = req.session(true);
@@ -111,7 +105,7 @@ public class SparkAppMain {
 			}
 			return true;
 		});
-		
+
 		post("/izmeniOrg", (req, res) -> {
 			Organizacija[] parametri = g.fromJson(req.body(), Organizacija[].class);
 			Organizacija stara = parametri[0];
@@ -136,13 +130,25 @@ public class SparkAppMain {
 						}
 					}
 					
+					for (VM virtm : masine) {
+						if (virtm.getOrganizacija().equals(stara.getIme())) {
+							virtm.setOrganizacija(izmenjena.getIme());
+						}
+					}
+					
+					for (Disk disk : diskovi) {
+						if (disk.getOrganizacija().equals(stara.getIme())) {
+							disk.setOrganizacija(izmenjena.getIme());
+						}
+					}
+					
 					upisiUFajl();
 					break;
 				}
 			}
 			return true;
 		});
-		
+
 		post("/izmeniKor", (req, res) -> {
 			Korisnik[] parametri = g.fromJson(req.body(), Korisnik[].class);
 			Korisnik stari = parametri[0];
@@ -262,6 +268,128 @@ public class SparkAppMain {
 			return true;
 		});
 		
+		post("/izmeniDisk", (req, res) -> {
+			Disk[] parametri = g.fromJson(req.body(), Disk[].class);
+			Disk stari = parametri[0];
+			Disk izmenjeni = parametri[1];
+
+			for (KategorijaVM ka : kategorije) {
+				if (!ka.getIme().equals(stari.getIme())) {
+					if (ka.getIme().equals(izmenjeni.getIme())) {
+						return false;
+					}
+				}
+			}
+			for (VM mas : masine) {
+				if (!mas.getIme().equals(stari.getIme())) {
+					if (mas.getIme().equals(izmenjeni.getIme())) {
+						return false;
+					}
+				}
+			}
+			for (Disk dis : diskovi) {
+				if (!dis.getIme().equals(stari.getIme())) {
+					if (dis.getIme().equals(izmenjeni.getIme())) {
+						return false;
+					}
+				}
+			}
+
+			for (int i = 0; i < diskovi.size(); i++) {
+				if (diskovi.get(i).getIme().equals(stari.getIme())) {
+					diskovi.set(i, izmenjeni);
+					
+					for (Organizacija org : organizacije) {
+						for (int j = 0; j < org.getResursi().size(); j++) {
+							if (org.getResursi().get(j).equals(stari.getIme())) {
+								org.getResursi().set(j, izmenjeni.getIme());
+							}
+						}
+					}
+					
+					for (VM vm : masine) {
+						if (vm.getIme().equals(stari.getVirtuelnaMasina())) {
+							vm.getDiskovi().remove(stari.getIme());
+						}
+					}
+					
+					for (VM vm : masine) {
+						if (vm.getIme().equals(izmenjeni.getVirtuelnaMasina())) {
+							vm.getDiskovi().add(izmenjeni.getIme());
+						}
+					}
+					
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
+		post("/obrisiKorisnika", (req, res) -> {
+			Korisnik zaBrisanje = g.fromJson(req.body(), Korisnik.class);
+			
+			for (int i = 0; i < korisnici.size(); i++) {
+				if (korisnici.get(i).getEmail().equals(zaBrisanje.getEmail())) {
+					korisnici.remove(i);
+					
+					for (Organizacija org : organizacije) {
+						if (org.getIme().equals(zaBrisanje.getOrganizacija())) {
+							org.getKorisnici().remove(zaBrisanje.getIme());
+						}
+					}
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
+		post("/obrisiKategoriju", (req, res) -> {
+			KategorijaVM zaBrisanje = g.fromJson(req.body(), KategorijaVM.class);
+			
+			for (int i = 0; i < kategorije.size(); i++) {
+				if (kategorije.get(i).getIme().equals(zaBrisanje.getIme())) {
+					
+					for (VM masina : masine) {
+						if (masina.getKategorija().getIme().equals(zaBrisanje.getIme())) {
+							return false;
+						}
+					}
+					kategorije.remove(i);
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+		
+		post("/obrisiMasinu", (req, res) -> {
+			VM zaBrisanje = g.fromJson(req.body(), VM.class);
+			
+			for (int i = 0; i < masine.size(); i++) {
+				if (masine.get(i).getIme().equals(zaBrisanje.getIme())) {
+					masine.remove(i);
+
+					for (Organizacija org : organizacije) {
+						if (org.getIme().equals(zaBrisanje.getOrganizacija())) {
+							org.getResursi().remove(zaBrisanje.getIme());
+						}
+					}
+					
+					for (Disk dis : diskovi) {
+						if (dis.getVirtuelnaMasina().equals(zaBrisanje.getIme())) {
+							dis.setVirtuelnaMasina("");
+						}
+					}
+					
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
+
 		post("/dodajOrg", (req, res) -> {
 			Organizacija nova = g.fromJson(req.body(), Organizacija.class);
 			
@@ -353,77 +481,85 @@ public class SparkAppMain {
 			return true;
 		});
 		
-		post("/obrisiKorisnika", (req, res) -> {
-			Korisnik zaBrisanje = g.fromJson(req.body(), Korisnik.class);
+		post("/dodajDisk", (req, res) -> {
+			Disk novi = g.fromJson(req.body(), Disk.class);
 			
-			for (int i = 0; i < korisnici.size(); i++) {
-				if (korisnici.get(i).getEmail().equals(zaBrisanje.getEmail())) {
-					korisnici.remove(i);
-					
-					for (Organizacija org : organizacije) {
-						if (org.getIme().equals(zaBrisanje.getOrganizacija())) {
-							org.getKorisnici().remove(zaBrisanje.getIme());
-						}
-					}
-					upisiUFajl();
-					break;
+			for (KategorijaVM k : kategorije) {
+				if (k.getIme().equals(novi.getIme())) {
+					return false;
 				}
 			}
+			for (VM mas : masine) {
+				if (mas.getIme().equals(novi.getIme())) {
+					return false;
+				}
+			}
+			for (Disk d : diskovi) {
+				if (d.getIme().equals(novi.getIme())) {
+					return false;
+				}
+			}
+			
+			for (VM vm : masine) {
+				if (vm.getIme().equals(novi.getVirtuelnaMasina())) {
+					vm.getDiskovi().add(novi.getIme());
+				}
+			}
+			
+			for (Organizacija organ : organizacije) {
+				if (organ.getIme().equals(novi.getOrganizacija())) {
+					organ.getResursi().add(novi.getIme());
+				}
+			}
+			
+			// TODO : razmisli mozda treba jos nesto, sad me mrzi da razmisljam
+			diskovi.add(novi);
+			upisiUFajl();
 			return true;
 		});
-		
-		post("/obrisiMasinu", (req, res) -> {
-			VM zaBrisanje = g.fromJson(req.body(), VM.class);
-			
-			for (int i = 0; i < masine.size(); i++) {
-				if (masine.get(i).getIme().equals(zaBrisanje.getIme())) {
-					masine.remove(i);
 
-					for (Organizacija org : organizacije) {
-						if (org.getIme().equals(zaBrisanje.getOrganizacija())) {
-							org.getResursi().remove(zaBrisanje.getIme());
+		post("/korisniciOrganizacije", (req, res) -> {
+			res.type("application/json");
+			Organizacija org = g.fromJson(req.body(), Organizacija.class);
+			ArrayList<Korisnik> korisniciOrganizacije = new ArrayList<Korisnik>();
+			if (org.getKorisnici() != null) {
+				for (String email : org.getKorisnici()) {
+					for (Korisnik kor : korisnici) {
+						if (kor.getEmail().equals(email)) {
+							korisniciOrganizacije.add(kor);
 						}
 					}
-					
-					for (Disk dis : diskovi) {
-						if (dis.getVirtuelnaMasina().equals(zaBrisanje.getIme())) {
-							dis.setVirtuelnaMasina("");
-						}
-					}
-					
-					upisiUFajl();
-					break;
 				}
 			}
-			return true;
-		});
-		
-		post("/obrisiKategoriju", (req, res) -> {
-			KategorijaVM zaBrisanje = g.fromJson(req.body(), KategorijaVM.class);
-			
-			for (int i = 0; i < kategorije.size(); i++) {
-				if (kategorije.get(i).getIme().equals(zaBrisanje.getIme())) {
-					
-					for (VM masina : masine) {
-						if (masina.getKategorija().getIme().equals(zaBrisanje.getIme())) {
-							return false;
-						}
-					}
-					kategorije.remove(i);
-					upisiUFajl();
-					break;
-				}
-			}
-			return true;
+			return g.toJson(korisniciOrganizacije);
 		});
 		
 		post("/masineIzIsteOrg", (req, res) -> {
 			res.type("application/json");
 			Disk disk = g.fromJson(req.body(), Disk.class);
 			ArrayList<VM> masineIzIsteOrg = new ArrayList<VM>();
+			for (VM virtm : masine) {
+				if (virtm.getOrganizacija().equals(disk.getOrganizacija())) {
+					masineIzIsteOrg.add(virtm);
+				}
+			}
 			return g.toJson(masineIzIsteOrg);
 		});
 		
+		post("/diskoviIzIsteOrg", (req, res) -> {
+			res.type("application/json");
+			VM virm = g.fromJson(req.body(), VM.class);
+			ArrayList<Disk> diskoviIzIsteOrg = new ArrayList<Disk>();
+			for (Disk dis : diskovi) {
+				if (dis.getOrganizacija().equals(virm.getOrganizacija())) {
+					if (dis.getVirtuelnaMasina().equals("") || dis.getVirtuelnaMasina().equals(virm.getIme())) {
+						diskoviIzIsteOrg.add(dis);
+					}
+				}
+			}
+			return g.toJson(diskoviIzIsteOrg);
+		});
+
 		get("/ucitajOrganizacije", (req, res) -> {
 			res.type("application/json");
 			return g.toJson(organizacije);
@@ -444,6 +580,11 @@ public class SparkAppMain {
 			return g.toJson(masine);
 		});
 		
+		get("/ucitajDiskove", (req, res) -> {
+			res.type("application/json");
+			return g.toJson(diskovi);
+		});
+
 		get("/logout", (req, res) -> {
 			Session ss = req.session(true);
 			Korisnik korisnik = ss.attribute("korisnik");
@@ -453,7 +594,7 @@ public class SparkAppMain {
 			return true;
 		});
 	}
-	
+
 	private static void ucitajFajlove() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
 		String sep = System.getProperty("file.separator");
 		
