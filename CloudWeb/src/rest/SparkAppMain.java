@@ -389,6 +389,32 @@ public class SparkAppMain {
 			}
 			return true;
 		});
+		
+		post("/obrisiDisk", (req, res) -> {
+			Disk zaBrisanje = g.fromJson(req.body(), Disk.class);
+			
+			for (int i = 0; i < diskovi.size(); i++) {
+				if (diskovi.get(i).getIme().equals(zaBrisanje.getIme())) {
+					diskovi.remove(i);
+
+					for (Organizacija org : organizacije) {
+						if (org.getIme().equals(zaBrisanje.getOrganizacija())) {
+							org.getResursi().remove(zaBrisanje.getIme());
+						}
+					}
+
+					for (VM vm : masine) {
+						if (vm.getIme().equals(zaBrisanje.getVirtuelnaMasina())) {
+							vm.getDiskovi().remove(zaBrisanje.getIme());
+						}
+					}
+					
+					upisiUFajl();
+					break;
+				}
+			}
+			return true;
+		});
 
 		post("/dodajOrg", (req, res) -> {
 			Organizacija nova = g.fromJson(req.body(), Organizacija.class);

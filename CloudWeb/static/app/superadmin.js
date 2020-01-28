@@ -29,6 +29,9 @@ Vue.component("super-admin", {
 	    	potvrdaLozinke : "",
 	    	istaJeKategorija : true,
 	    	poklapajuSeLozinke : true,
+	    	kapacFilter : false,
+	    	kapDonja : 0,
+	    	kapGornja : 0,
 	    	brjezFilter : false,
 	    	brjezDonja : 0,
 	    	brjezGornja : 0,
@@ -41,6 +44,7 @@ Vue.component("super-admin", {
 	    	korisniciOrganizacije : [],
 	    	masineIzIsteOrg : [],
 	    	diskoviIzIsteOrg : [],
+	    	pretragaDisk : "",
 	    	pretragaMasina : "",
     	}
 	},
@@ -205,6 +209,34 @@ Vue.component("super-admin", {
 			<router-link :to="{ path: 'dodavanjeMasine'}" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeMasine">Dodaj virtuelnu mašinu</router-link>
 		</div>
 		<div class="tab-pane fade" id="pills-diskovi" role="tabpanel" >
+			<div class="input-group">
+			  	<span class="input-group-btn">
+			    	<a class="btn btn-secondary m-2" data-toggle="collapse" href="#filteriDisk" role="button">
+				    	Prikaži filtere
+				  	</a>
+			  	</span>
+				<input type="search" class="form-control col-4 ml-auto m-2" v-model="pretragaDisk" id="pretdisk" placeholder="Pretraži.."/>
+			</div>
+			<div class="collapse" id="filteriDisk">
+		  		<div class="card card-body m-2">
+		    		<form>
+					  	<div class="form-row mb-4">
+					  		<div class="mt-5 mr-3 custom-control custom-checkbox">
+					  			<input type="checkbox" class="custom-control-input" id="kapac" v-model="kapacFilter">
+					  			<label class="custom-control-label" for="kapac"><font size="4">Kapacitet</font></label>
+							</div>
+					  		<div class="col-2 mt-1">
+					    	 	<label for="odkap">Od</label>
+								<input type="number" v-model="kapDonja" class="form-control" id="odkap" placeholder="Od">
+							</div>
+							<div class="col-2 mt-1">
+					    	 	<label for="dokap">Do</label>
+								<input type="number" v-model="kapGornja" class="form-control" id="dokap" placeholder="Do">
+							</div>
+						</div>
+					</form>
+		  		</div>
+			</div>
 			<table class="table table-hover table-striped">
 			  	<thead class="thead-light">
 			    	<tr>
@@ -902,6 +934,19 @@ Vue.component("super-admin", {
 			}
 			this.$router.go();
 		},
+		obrisiDisk : function (d) {
+			var hoceDaBrise = confirm("Da li stvarno želite da uklonite ovaj disk?");
+			if (hoceDaBrise == true) {
+				axios
+				.post('obrisiDisk', d)
+				.then(response => {
+					toast("Uspešno uklonjen disk.");
+					this.$router.go();
+				})
+				.catch(function (error) { console.log(error); });
+			}
+			this.$router.go();
+		},
 		proveriLozinke : function () {
 			if (this.noviKorisnik.lozinka != this.potvrdaLozinke) {
 				this.poklapajuSeLozinke = false;
@@ -954,6 +999,17 @@ Vue.component("super-admin", {
 		sadrziDisk : function (ime) {
 			return this.novaMasina.diskovi.includes(ime);
 		},
+		zadovoljavaKapacitet : function (disk) {
+	    	if (this.kapacFilter) {
+	    		if (disk.kapacitet >= this.kapDonja && disk.kapacitet <= this.kapGornja) {
+	    			return true;
+	    		} else {
+	    			return false;
+	    		}
+	    	} else {
+	    		return true;
+	    	}
+		},
 		zadovoljavaBrJez : function (masina) {
 	    	if (this.brjezFilter) {
 	    		if (masina.brojJezgara >= this.brjezDonja && masina.brojJezgara <= this.brjezGornja) {
@@ -994,6 +1050,11 @@ Vue.component("super-admin", {
 	    	  return masina.ime.toLowerCase().includes(this.pretragaMasina.toLowerCase()) && this.zadovoljavaBrJez(masina) && this.zadovoljavaRAM(masina) && this.zadovoljavaGPU(masina)
 	      	})
 	    },
+	    filtriraniDiskovi : function () {
+	    	return this.diskovi.filter(disk => {
+	    	  return disk.ime.toLowerCase().includes(this.pretragaDisk.toLowerCase()) && this.zadovoljavaKapacitet(disk);
+	      	})
+	    }
 	},
 	mounted () {
 		axios
