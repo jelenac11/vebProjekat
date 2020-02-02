@@ -34,12 +34,12 @@ Vue.component("dodavanje-masine", {
 				<div class="form-row">
 			    	<div class="col">
 			    	 	<label for="kateg" class="mt-1">Kategorija</label>
-							<select class="custom-select mt-0" v-model="novaMasina.kategorija" v-on:change="popuniVM" id="kateg" required>
-						    	<option v-for="kat in kategorije" :value="kat">
-									{{ kat.ime }}
-						    	</option>
-						  	</select>
-						  	<div class="invalid-feedback" id="dodavanjeInvalid">Niste izabrali kategoriju.</div>
+						<select class="custom-select mt-0" v-model="novaMasina.kategorija" v-on:change="popuniVM" id="kateg" required>
+					    	<option v-for="kat in kategorije" :value="kat">
+								{{ kat.ime }}
+					    	</option>
+					  	</select>
+					  	<div class="invalid-feedback" id="dodavanjeInvalid">Niste izabrali kategoriju.</div>
 			    	</div>
 			  	</div>
 			  	<div class="form-row">

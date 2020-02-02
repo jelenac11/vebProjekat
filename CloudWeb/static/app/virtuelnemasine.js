@@ -17,6 +17,8 @@ Vue.component("virtuelne-masine", {
 	    	novaMasina : {},
 	    	submitovano : false,
 	    	uspesnaIzmena : true,
+	    	uspesnaIzmenaAkt : true,
+	    	regularniDatumiAkt : true,
 	    	istaJeKategorija : true,
 	    	brjezFilter : false,
 	    	brjezDonja : 0,
@@ -211,7 +213,7 @@ Vue.component("virtuelne-masine", {
 	      			<span>Isključena/Uključena</span>
 	      			<div class="mt-2">
 						<label class="switch">
-						  	<input type="checkbox" id="statusVM" v-on:change="ukljisklj">
+						  	<input type="checkbox" id="statusVM" v-on:change="ukljisklj" :checked="novaMasina.status" v-model="novaMasina.status" v-bind:disabled="ulogovan.uloga == 'KORISNIK'">
 						  	<span class="slider round"></span>
 						</label>
 	      			</div>
@@ -271,10 +273,30 @@ Vue.component("virtuelne-masine", {
 								</ul>
 							</div>
 					  	</div>
-					  	<div v-if=!uspesnaIzmena class="alert alert-danger mt-4" role="alert">
+			    		<label for="aktivnosti" class="mt-3">Lista aktivnosti</label>
+						<ul class="list-group list-group-flush" id="aktivnosti">
+						    <li v-for="akt in novaMasina.listaAktivnosti" class="list-group-item">
+						    	<div class="form-row">
+						  			<div class="col">
+										<input class="form-control" type="datetime-local" v-model="akt.upaljena" v-bind:disabled="ulogovan.uloga == 'KORISNIK'" required>
+									</div>
+									<div class="d-flex">
+									    <input v-if="akt.ugasena != null" class="form-control" type="datetime-local" v-model="akt.ugasena" v-bind:disabled="ulogovan.uloga == 'KORISNIK'" required>
+										<a class="btn btn-danger ml-1" v-if="akt.ugasena != null" v-on:click="obrisiAktivnost(akt)" v-bind:disabled="ulogovan.uloga == 'KORISNIK'" style="color:white">Obriši</a>
+									</div>
+							  	</div>
+						    </li>
+						</ul>
+						<div v-if=!uspesnaIzmena class="alert alert-danger mt-4" role="alert">
 							<p class="mb-0"><b>Greška!</b> Ime je zauzeto.</p>
 						</div>
-					  	<button class="btn btn-lg btn-primary btn-block mt-4" type="submit" v-bind:disabled="izabranaMasina.ime == novaMasina.ime && istaJeKategorija && novaMasina.diskovi == izabranaMasina.diskovi">
+						<div v-if=!uspesnaIzmenaAkt class="alert alert-danger mt-4" role="alert">
+							<p class="mb-0"><b>Greška!</b> Datum početka aktivnosti mora biti pre datuma kraja.</p>
+						</div>
+						<div v-if=!regularniDatumiAkt class="alert alert-danger mt-4" role="alert">
+							<p class="mb-0"><b>Greška!</b> Datumi aktivnosti ne mogu biti u budućnosti.</p>
+						</div>
+					  	<button class="btn btn-lg btn-primary btn-block mt-4" type="submit" v-bind:disabled="izabranaMasina.ime == novaMasina.ime && istaJeKategorija && nizoviJednaki(novaMasina.diskovi, izabranaMasina.diskovi) && nizoviJednaki(novaMasina.listaAktivnosti, izabranaMasina.listaAktivnosti)">
 					  		Sačuvaj izmene
 					  	</button>
 					</form>
@@ -311,6 +333,34 @@ Vue.component("virtuelne-masine", {
 	    	}
 		},
 		izmenaVM : function () {
+			this.uspesnaIzmenaAkt = true;
+			var uspesnaAkt = true;
+			
+			this.regularniDatumiAkt = true;
+			var regularniDatumi = true;
+			
+			this.novaMasina.listaAktivnosti.forEach(function(aktivnost){
+				var pocetak = new Date(aktivnost.upaljena);
+				var kraj = new Date(aktivnost.ugasena);
+				
+				if (pocetak.getTime() > kraj.getTime()) {
+					uspesnaAkt = false;
+					return;
+				}
+				
+				var trenutno = new Date();
+				if (pocetak.getTime() > trenutno.getTime() || kraj.getTime() > trenutno.getTime()) {
+					regularniDatumi = false;
+					return;
+				}
+			});
+			
+			this.uspesnaIzmenaAkt = uspesnaAkt;
+			this.regularniDatumiAkt = regularniDatumi;
+			if (!uspesnaAkt || !regularniDatumi) {
+				return;
+			}
+			
 			this.submitovano = true;
 			if (document.getElementById('forma-izmena-vm').checkValidity() === true) {
 				axios
@@ -391,8 +441,42 @@ Vue.component("virtuelne-masine", {
 	    	}
 		},
 		ukljisklj : function () {
-			this.novaMasina.status = $('.statusVM').val();
-			console.log(this.novaMasina.status);
+			if (this.novaMasina.status) {
+				toast("Virtuelna mašina " + this.novaMasina.ime + " je uključena.");
+			} else {
+				toast("Virtuelna mašina " + this.novaMasina.ime + " je isključena.");
+			}
+			axios
+			.post('ukljuciiskljuciVM', this.izabranaMasina)
+			.then(response1 => {
+				this.novaMasina = response1.data;
+				axios
+				.get('ucitajMasine')
+		        .then(response2 => (this.masine = response2.data))
+		        .catch(function (error) { console.log(error); });
+			})
+			.catch(error => { console.log(error); });
+		},
+		obrisiAktivnost : function (akt) {
+			this.novaMasina.listaAktivnosti = this.novaMasina.listaAktivnosti.filter(function(e) { return e !== akt });
+			axios
+			.post('izmeniVM', [this.izabranaMasina, this.novaMasina])
+			.then(response => {
+				axios
+				.get('ucitajMasine')
+		        .then(response2 => (this.masine = response2.data))
+		        .catch(function (error) { console.log(error); });
+			})
+			.catch(error => { console.log(error); });
+		},
+		nizoviJednaki : function (a, b) {
+			if (a === b) return true;
+			if (a == null || b == null) return false;
+			if (a.length != b.length) return false;
+			for (var i = 0; i < a.length; ++i) {
+			  if (a[i] !== b[i]) return false;
+			}
+			return true;
 		}
 	},
 	computed: {
@@ -417,31 +501,11 @@ Vue.component("virtuelne-masine", {
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajMasine')
-        .then(response => {
-			masinice = response.data;
-			if (this.ulogovan.uloga == "ADMIN" || this.ulogovan.uloga == "KORISNIK") {
-				mojOrgan = this.ulogovan.organizacija;
-				this.masine = masinice.filter(function(mas) {
-					return mas.organizacija == mojOrgan;
-				})
-			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
-				this.masine = masinice;
-			}
-		})
+        .then(response => (this.masine = response.data))
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajDiskove')
-        .then(response => {
-			diskici = response.data;
-			if (this.ulogovan.uloga == "ADMIN" || this.ulogovan.uloga == "KORISNIK") {
-				mojOrgan = this.ulogovan.organizacija;
-				this.diskovi = diskici.filter(function(dis) {
-					return dis.organizacija == mojOrgan;
-				})
-			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
-				this.diskovi = diskici;
-			}
-		})
+        .then(response => (this.diskovi = response.data))
         .catch(function (error) { console.log(error); });
 	}
 });

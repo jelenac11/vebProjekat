@@ -15,6 +15,7 @@ Vue.component("korisnici", {
 	    	noviKorisnik : {},
 	    	submitovano : false,
 	    	uspesnaIzmena : true,
+	    	novaLozinka : "",
 	    	potvrdaLozinke : "",
 	    	poklapajuSeLozinke : true,
     	}
@@ -149,7 +150,7 @@ Vue.component("korisnici", {
 						<div class="form-row">
 					    	<div class="col">
 					    	 	<label for="lozinka1">Lozinka</label>
-								<input type="password" minlength="8" maxlength="20" v-model="noviKorisnik.lozinka" class="form-control" id="lozinka1" placeholder="Lozinka" required>
+								<input type="password" minlength="8" maxlength="20" v-model="novaLozinka" class="form-control" id="lozinka1" placeholder="Lozinka">
 								<small id="passwordHelpBlock" class="form-text text-muted">
 								  	Lozinka mora imati 8-20 karaktera.
 								</small>
@@ -157,7 +158,7 @@ Vue.component("korisnici", {
 							</div>
 					    	<div class="col">
 					    		<label for="lozinka2">Potvrdite lozinku</label>
-								<input type="password" v-model="potvrdaLozinke" class="form-control" v-bind:class="{ nePoklapajuSe : !poklapajuSeLozinke }" id="lozinka2" placeholder="Lozinka">
+								<input type="password" v-model="potvrdaLozinke" class="form-control" v-bind:class="{ nePoklapajuSe : !poklapajuSeLozinke }" id="lozinka2" v-bind:disabled="novaLozinka == ''" placeholder="Lozinka">
 								<div class="invalid-feedback" v-bind:class="{ 'd-block' : !poklapajuSeLozinke }" id="dodavanjeInvalid">Lozinke se ne poklapaju!</div>
 					    	</div>
 					  	</div>
@@ -191,7 +192,7 @@ Vue.component("korisnici", {
 							  	</select>
 							</div>
 					  	</div>
-					  	<button class="btn btn-lg btn-primary btn-block mt-4" type="submit" v-bind:disabled="izabraniKorisnik.ime == noviKorisnik.ime && izabraniKorisnik.prezime == noviKorisnik.prezime && izabraniKorisnik.uloga == noviKorisnik.uloga && izabraniKorisnik.lozinka == noviKorisnik.lozinka">
+					  	<button class="btn btn-lg btn-primary btn-block mt-4" type="submit" v-bind:disabled="izabraniKorisnik.ime == noviKorisnik.ime && izabraniKorisnik.prezime == noviKorisnik.prezime && izabraniKorisnik.uloga == noviKorisnik.uloga && novaLozinka == ''">
 					  		Sačuvaj izmene
 					  	</button>
 					</form>
@@ -217,6 +218,9 @@ Vue.component("korisnici", {
 			this.noviKorisnik = JSON.parse(JSON.stringify(k));
 			this.uspesnaIzmena = true;
 			this.submitovano = false;
+			this.novaLozinka = "";
+			this.potvrdaLozinke = "";
+	    	this.poklapajuSeLozinke = true;
 		},
 		izmenaKor : function () {
 			this.proveriLozinke();
@@ -253,10 +257,16 @@ Vue.component("korisnici", {
 			$("#izmenaKorisnikaModal .close").click();
 		},
 		proveriLozinke : function () {
-			if (this.noviKorisnik.lozinka != this.potvrdaLozinke) {
-				this.poklapajuSeLozinke = false;
+			if (this.novaLozinka != "") {
+				this.noviKorisnik.lozinka = this.novaLozinka
+				if (this.novaLozinka != this.potvrdaLozinke) {
+					this.poklapajuSeLozinke = false;
+				} else {
+					this.poklapajuSeLozinke = true;
+				}
 			} else {
 				this.poklapajuSeLozinke = true;
+				this.noviKorisnik.lozinka = this.izabraniKorisnik.lozinka;
 			}
 		},
 	},
@@ -267,17 +277,7 @@ Vue.component("korisnici", {
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajKorisnike')
-        .then(response => {
-			korisni = response.data;
-			if (this.ulogovan.uloga == "ADMIN") {
-				mojaOrgan = this.ulogovan.organizacija;
-				this.korisnici = korisni.filter(function(kor) {
-					return kor.organizacija == mojaOrgan;
-				})
-			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
-				this.korisnici = korisni;
-			}
-		})
+        .then(response => (this.korisnici = response.data))
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajOrganizacije')

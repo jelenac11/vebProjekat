@@ -11,6 +11,7 @@ const DodavanjeKategorije = { template: '<dodavanje-kategorije></dodavanje-kateg
 const DodavanjeMasine = { template: '<dodavanje-masine></dodavanje-masine>' }
 const DodavanjeDiska = { template: '<dodavanje-diska></dodavanje-diska>' }
 const Forbidden = { template: '<forbidden></forbidden>' }
+const Racuni = { template: '<racuni></racuni>' }
 
 const router = new VueRouter({
 	  mode: 'hash',
@@ -28,6 +29,7 @@ const router = new VueRouter({
 	    { path: '/dodavanjeMasine', component: DodavanjeMasine, },
 	    { path: '/dodavanjeDiska', component: DodavanjeDiska, },
 		{ path: '/forbidden', component: Forbidden },
+		{ path: '/racuni', component: Racuni },
 	  ]
 });
 
@@ -49,7 +51,11 @@ router.beforeEach((to, from, next) => {
 		    		next();
 		    	}
 	    	} else if (response.data.uloga == "SUPER_ADMIN") {
-	    		next();
+	    		if (to.path == '/racuni') {
+		    		next('/forbidden');
+		    	} else {
+		    		next();
+		    	}
 	    	}
 	    })
 	    .catch(function (error) {
@@ -61,7 +67,7 @@ router.beforeEach((to, from, next) => {
 	    .get('testLogin')
 	    .then(response => {
 	    	if (response.data) {
-	    		next('/forbidden');
+	    		next('/virtuelnemasine');
 	    	} else {
 	    		next();
 	    	}
@@ -71,5 +77,5 @@ router.beforeEach((to, from, next) => {
 
 var app = new Vue({
 	router,
-	el: '#login'
+	el: '#homepage'
 });

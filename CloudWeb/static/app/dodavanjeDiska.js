@@ -113,6 +113,10 @@ Vue.component("dodavanje-diska", {
         	this.ulogovan = response.data;
         	if (this.ulogovan.uloga == "ADMIN") {
         		this.noviDisk.organizacija = this.ulogovan.organizacija;
+        		axios
+    	        .post('masineIzIsteOrg', this.noviDisk)
+    	        .then(response => (this.masineIzIsteOrg = response.data))
+    	        .catch(function (error) { console.log(error); });
         	}
         })
         .catch(function (error) { console.log(error); });

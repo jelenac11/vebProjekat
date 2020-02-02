@@ -57,5 +57,5 @@ Vue.component("login", {
 				this.$router.replace({ path: 'virtuelnemasine' });
 			}
 		}
-	} 
+	}
 });

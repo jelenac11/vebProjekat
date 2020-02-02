@@ -123,6 +123,7 @@ Vue.component("organizacije", {
 			  	</tbody>
 			</table>
 			<router-link :to="{ path: 'dodavanjeOrganizacije'}" v-if="this.ulogovan.uloga == 'SUPER_ADMIN'" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeOrg">Dodaj organizaciju</router-link>
+			<router-link :to="{ path: 'racuni'}" v-if="this.ulogovan.uloga == 'ADMIN'" class="btn btn-primary btn-block btn-lg my-2 p-2" id="racuni">Račun</router-link>
 		</div>
 	</div>
 	
@@ -276,18 +277,8 @@ Vue.component("organizacije", {
         .then(response => (this.ulogovan = response.data))
         .catch(function (error) { console.log(error); });
 		axios
-        .get('ucitajOrganizacije')
-        .then(response => {
-			organi = response.data;
-			mojOrgan = this.ulogovan.organizacija;
-			if (this.ulogovan.uloga == "ADMIN") {
-				this.organizacije = organi.filter(function(org) {
-					return org.ime == mojOrgan;
-				})
-			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
-				this.organizacije = organi;
-			}
-		})
+		.get('ucitajOrganizacije')
+        .then(response => (this.organizacije = response.data))
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajKorisnike')

@@ -322,31 +322,11 @@ Vue.component("diskovi", {
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajMasine')
-        .then(response => {
-			masinice = response.data;
-			if (this.ulogovan.uloga == "ADMIN" || this.ulogovan.uloga == "KORISNIK") {
-				mojOrgan = this.ulogovan.organizacija;
-				this.masine = masinice.filter(function(mas) {
-					return mas.organizacija == mojOrgan;
-				})
-			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
-				this.masine = masinice;
-			}
-		})
+        .then(response => (this.masine = response.data))
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajDiskove')
-        .then(response => {
-			diskici = response.data;
-			if (this.ulogovan.uloga == "ADMIN" || this.ulogovan.uloga == "KORISNIK") {
-				mojOrgan = this.ulogovan.organizacija;
-				this.diskovi = diskici.filter(function(dis) {
-					return dis.organizacija == mojOrgan;
-				})
-			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
-				this.diskovi = diskici;
-			}
-		})
+        .then(response => (this.diskovi = response.data))
         .catch(function (error) { console.log(error); });
 	}
 });
