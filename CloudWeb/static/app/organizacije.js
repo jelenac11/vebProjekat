@@ -31,13 +31,13 @@ Vue.component("organizacije", {
 				<li class="nav-item">
 					<router-link :to="{ path: 'diskovi'}" data-toggle="pill" class="nav-link">Diskovi</router-link>
 				</li>
-				<li class="nav-item">
-					<router-link :to="{ path: 'kategorije'}" data-toggle="pill" class="nav-link">kategorije</router-link>
+				<li v-if="this.ulogovan.uloga == 'SUPER_ADMIN'" class="nav-item">
+					<router-link :to="{ path: 'kategorije'}" data-toggle="pill" class="nav-link">Kategorije</router-link>
 				</li>
-			 	<li class="nav-item">
+			 	<li v-if="this.ulogovan.uloga != 'KORISNIK'" class="nav-item">
 			 		<router-link :to="{ path: 'organizacije'}" data-toggle="pill" class="nav-link active">Organizacije</router-link>
 				</li>
-			  	<li class="nav-item">
+			  	<li v-if="this.ulogovan.uloga != 'KORISNIK'" class="nav-item">
 			  		<router-link :to="{ path: 'korisnici'}" data-toggle="pill" class="nav-link">Korisnici</router-link>
 				</li>
 			</ul>
@@ -122,7 +122,7 @@ Vue.component("organizacije", {
 			    	</tr>
 			  	</tbody>
 			</table>
-			<router-link :to="{ path: 'dodavanjeOrganizacije'}" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeOrg">Dodaj organizaciju</router-link>
+			<router-link :to="{ path: 'dodavanjeOrganizacije'}" v-if="this.ulogovan.uloga == 'SUPER_ADMIN'" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeOrg">Dodaj organizaciju</router-link>
 		</div>
 	</div>
 	
@@ -188,7 +188,7 @@ Vue.component("organizacije", {
 								</ul>
 							</div>
 					  	</div>
-					  	<div v-if=!uspesnaIzmena class="alert alert-danger mt-4" role="alert">
+					  	<div v-if="!uspesnaIzmena" class="alert alert-danger mt-4" role="alert">
 							<p class="mb-0"><b>Greška!</b> Organizacija sa datim imenom već postoji.</p>
 						</div>
 					  	<button class="btn btn-lg btn-primary btn-block mt-4" type="submit" v-bind:disabled="izabranaOrganizacija.ime == novaOrganizacija.ime && izabranaOrganizacija.opis == novaOrganizacija.opis && izabranaOrganizacija.logoPutanja == novaOrganizacija.logoPutanja">
@@ -231,29 +231,14 @@ Vue.component("organizacije", {
 					this.uspesnaIzmena = response.data;
 					
 					if (this.uspesnaIzmena) {
-						axios
-				        .get('ucitajKorisnike')
-				        .then(response => (this.korisnici = response.data))
-				        .catch(function (error) { console.log(error); });
-						axios
-				        .get('ucitajOrganizacije')
-				        .then(response => (this.organizacije = response.data))
-				        .catch(function (error) { console.log(error); });
-						axios
-				        .get('ucitajMasine')
-				        .then(response => (this.masine = response.data))
-				        .catch(function (error) { console.log(error); });
-						axios
-				        .get('ucitajDiskove')
-				        .then(response => (this.diskovi = response.data))
-				        .catch(function (error) { console.log(error); });
-						
 						toast("Uspešno izmenjena organizacija.");
-						$("#izmenaOrgModal .close").click();
-						this.submitovano = false;
+						this.$router.go();
 					}
 				})
-				.catch(function (error) { console.log(error); });
+				.catch(error => {
+					console.log(error);
+					this.uspesnaIzmena = false;
+				});
 			} else {
 				this.uspesnaIzmena = true;
 			}
@@ -292,7 +277,17 @@ Vue.component("organizacije", {
         .catch(function (error) { console.log(error); });
 		axios
         .get('ucitajOrganizacije')
-        .then(response => (this.organizacije = response.data))
+        .then(response => {
+			organi = response.data;
+			mojOrgan = this.ulogovan.organizacija;
+			if (this.ulogovan.uloga == "ADMIN") {
+				this.organizacije = organi.filter(function(org) {
+					return org.ime == mojOrgan;
+				})
+			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
+				this.organizacije = organi;
+			}
+		})
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajKorisnike')

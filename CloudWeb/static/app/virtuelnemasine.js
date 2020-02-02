@@ -43,13 +43,13 @@ Vue.component("virtuelne-masine", {
 				<li class="nav-item">
 					<router-link :to="{ path: 'diskovi'}" data-toggle="pill" class="nav-link">Diskovi</router-link>
 				</li>
-				<li class="nav-item">
-					<router-link :to="{ path: 'kategorije'}" data-toggle="pill" class="nav-link">kategorije</router-link>
+				<li v-if="this.ulogovan.uloga == 'SUPER_ADMIN'" class="nav-item">
+					<router-link :to="{ path: 'kategorije'}" data-toggle="pill" class="nav-link">Kategorije</router-link>
 				</li>
-			 	<li class="nav-item">
+			 	<li v-if="this.ulogovan.uloga != 'KORISNIK'" class="nav-item">
 			 		<router-link :to="{ path: 'organizacije'}" data-toggle="pill" class="nav-link">Organizacije</router-link>
 				</li>
-			  	<li class="nav-item">
+			  	<li v-if="this.ulogovan.uloga != 'KORISNIK'" class="nav-item">
 			  		<router-link :to="{ path: 'korisnici'}" data-toggle="pill" class="nav-link">Korisnici</router-link>
 				</li>
 			</ul>
@@ -192,11 +192,11 @@ Vue.component("virtuelne-masine", {
 				      	<td width="17%">{{ vm.RAM }}</td>
 				      	<td width="17%">{{ vm.GPUJezgra }}</td>
 				      	<td width="22%">{{ vm.organizacija }}</td>
-				      	<td width="10%"><button class="btn btn-danger btn-sm" v-on:click="obrisiMasinu(vm)">Ukloni</button></td>
+				      	<td width="10%"><button class="btn btn-danger btn-sm" v-if="ulogovan.uloga != 'KORISNIK'" v-on:click="obrisiMasinu(vm)">Ukloni</button></td>
 			    	</tr>
 			  	</tbody>
 			</table>
-			<router-link :to="{ path: 'dodavanjeMasine'}" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeMasine">Dodaj virtuelnu mašinu</router-link>
+			<router-link :to="{ path: 'dodavanjeMasine'}" v-if="this.ulogovan.uloga != 'KORISNIK'" class="btn btn-primary btn-block btn-lg my-2 p-2" id="dodavanjeMasine">Dodaj virtuelnu mašinu</router-link>
 		</div>
 	</div>
 	
@@ -208,18 +208,25 @@ Vue.component("virtuelne-masine", {
 	        		<button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
 	      		</div>
 	      		<div class="modal-body">
+	      			<span>Isključena/Uključena</span>
+	      			<div class="mt-2">
+						<label class="switch">
+						  	<input type="checkbox" id="statusVM" v-on:change="ukljisklj">
+						  	<span class="slider round"></span>
+						</label>
+	      			</div>
 	        		<form class="needs-validation mb-4" v-bind:class="{ 'was-validated': submitovano }" novalidate @submit.prevent="izmenaVM" id="forma-izmena-vm">
 					  	<div class="form-row mb-3">
 					  		<div class="col">
 					    	 	<label for="imevm">Ime</label>
-								<input type="text" v-model="novaMasina.ime" class="form-control" id="imevm" placeholder="Ime" required>
+								<input type="text" v-model="novaMasina.ime" class="form-control" id="imevm" placeholder="Ime" required v-bind:disabled="this.ulogovan.uloga == 'KORISNIK'">
 								<div class="invalid-feedback" id="izmenaInvalid">Niste uneli ime.</div>
 							</div>
 						</div>
 						<div class="form-row">
 					    	<div class="col">
 					    	 	<label for="kateg" class="mt-1">Kategorija</label>
-									<select class="custom-select mt-0" v-model="novaMasina.kategorija" v-on:change="popuniVM" id="kateg" required>
+									<select class="custom-select mt-0" v-model="novaMasina.kategorija" v-on:change="popuniVM" id="kateg" required v-bind:disabled="this.ulogovan.uloga == 'KORISNIK'">
 								    	<option v-for="kat in kategorije" :value="kat">
 											{{ kat.ime }}
 								    	</option>
@@ -257,7 +264,7 @@ Vue.component("virtuelne-masine", {
 								<ul class="list-group list-group-flush" id="mojiDiskovi">
 								    <li v-for="di in diskoviIzIsteOrg" class="list-group-item">
 										<div class="custom-control custom-checkbox">
-								        	<input type="checkbox" v-bind:value="di.ime" v-model="novaMasina.diskovi" class="custom-control-input" v-bind:id="di.ime" :checked="sadrziDisk(di.ime)">
+								        	<input type="checkbox" v-bind:value="di.ime" v-model="novaMasina.diskovi" class="custom-control-input" v-bind:id="di.ime" :checked="sadrziDisk(di.ime)" v-bind:disabled="ulogovan.uloga == 'KORISNIK'">
 								        	<label class="custom-control-label" v-bind:for="di.ime">{{ di.ime }}</label>
 										</div>
 								    </li>
@@ -312,25 +319,14 @@ Vue.component("virtuelne-masine", {
 					this.uspesnaIzmena = response.data;
 					
 					if (this.uspesnaIzmena) {
-						axios
-				        .get('ucitajMasine')
-				        .then(response => (this.masine = response.data))
-				        .catch(function (error) { console.log(error); });
-						axios
-				        .get('ucitajOrganizacije')
-				        .then(response => (this.organizacije = response.data))
-				        .catch(function (error) { console.log(error); });
-						axios
-				        .get('ucitajDiskove')
-				        .then(response => (this.diskovi = response.data))
-				        .catch(function (error) { console.log(error); });
-						
 						toast("Uspešno izmenjena virtuelna mašina.");
-						$("#izmenaVMModal .close").click();
-						this.submitovano = false;
+						this.$router.go();
 					}
 				})
-				.catch(function (error) { console.log(error); });
+				.catch(error => {
+					console.log(error);
+					this.uspesnaIzmena = false;
+				});
 			} else {
 				this.uspesnaIzmena = true;
 			}
@@ -394,6 +390,10 @@ Vue.component("virtuelne-masine", {
 	    		return true;
 	    	}
 		},
+		ukljisklj : function () {
+			this.novaMasina.status = $('.statusVM').val();
+			console.log(this.novaMasina.status);
+		}
 	},
 	computed: {
 	    filtriraneMasine : function () {
@@ -417,11 +417,31 @@ Vue.component("virtuelne-masine", {
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajMasine')
-        .then(response => (this.masine = response.data))
+        .then(response => {
+			masinice = response.data;
+			if (this.ulogovan.uloga == "ADMIN" || this.ulogovan.uloga == "KORISNIK") {
+				mojOrgan = this.ulogovan.organizacija;
+				this.masine = masinice.filter(function(mas) {
+					return mas.organizacija == mojOrgan;
+				})
+			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
+				this.masine = masinice;
+			}
+		})
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajDiskove')
-        .then(response => (this.diskovi = response.data))
+        .then(response => {
+			diskici = response.data;
+			if (this.ulogovan.uloga == "ADMIN" || this.ulogovan.uloga == "KORISNIK") {
+				mojOrgan = this.ulogovan.organizacija;
+				this.diskovi = diskici.filter(function(dis) {
+					return dis.organizacija == mojOrgan;
+				})
+			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
+				this.diskovi = diskici;
+			}
+		})
         .catch(function (error) { console.log(error); });
 	}
 });

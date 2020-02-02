@@ -64,7 +64,11 @@ Vue.component("izmena-profila", {
 					this.uspesnaIzmena = response.data;
 					this.porukaUspeha = response.data;
 				})
-				.catch(function (error) { console.log(error); });
+				.catch(error => {
+					console.log(error);
+					this.uspesnaIzmena = false;
+					this.porukaUspeha = false;
+				});
 			} else {
 				this.uspesnaIzmena = true;
 				this.porukaUspeha = false;

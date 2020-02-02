@@ -9,6 +9,7 @@ public class VM {
 	private int RAM;
 	private double GPUJezgra;
 	private String organizacija;
+	private boolean status;
 	private ArrayList<String> diskovi;
 	private ArrayList<Aktivnost> listaAktivnosti;
 	
@@ -19,7 +20,7 @@ public class VM {
 	}
 	
 	public VM(String ime, KategorijaVM kategorija, int brojJezgara, int rAM, double gPUJezgra, String organizacija,
-			ArrayList<String> diskovi, ArrayList<Aktivnost> listaAktivnosti) {
+			boolean status, ArrayList<String> diskovi, ArrayList<Aktivnost> listaAktivnosti) {
 		super();
 		this.ime = ime;
 		this.kategorija = kategorija;
@@ -27,6 +28,7 @@ public class VM {
 		this.RAM = rAM;
 		this.GPUJezgra = gPUJezgra;
 		this.organizacija = organizacija;
+		this.status = status;
 		this.diskovi = diskovi;
 		this.listaAktivnosti = listaAktivnosti;
 	}
@@ -80,6 +82,14 @@ public class VM {
 
 	public void setOrganizacija(String organizacija) {
 		this.organizacija = organizacija;
+	}
+
+	public boolean isStatus() {
+		return status;
+	}
+
+	public void setStatus(boolean status) {
+		this.status = status;
 	}
 
 	public ArrayList<String> getDiskovi() {

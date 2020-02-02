@@ -3,6 +3,7 @@ package rest;
 import static spark.Spark.get;
 import static spark.Spark.port;
 import static spark.Spark.post;
+import static spark.Spark.halt;
 import static spark.Spark.staticFiles;
 
 import java.io.File;
@@ -22,6 +23,7 @@ import beans.model.Disk;
 import beans.model.KategorijaVM;
 import beans.model.Korisnik;
 import beans.model.Organizacija;
+import beans.model.Uloga;
 import beans.model.VM;
 import spark.Session;
 
@@ -45,6 +47,7 @@ public class SparkAppMain {
 		ucitajFajlove();
 
 		post("/login", (req, res) -> {
+			res.type("application/json");
 			Korisnik ulog = g.fromJson(req.body(), Korisnik.class);
 			for (Korisnik k : korisnici) {
 				if (k.getEmail().equals(ulog.getEmail()) && k.getLozinka().equals(ulog.getLozinka())) {
@@ -54,10 +57,12 @@ public class SparkAppMain {
 						korisnik = k;
 						ss.attribute("korisnik", korisnik);
 					}
-					return true;
+					res.status(200);
+					return g.toJson(true);
 				}
 			}
-			return false;
+			res.status(200);
+			return g.toJson(false);
 		});
 
 		get("/ulogovan", (req, res) -> {
@@ -65,13 +70,29 @@ public class SparkAppMain {
 			Session ss = req.session(true);
 			Korisnik korisnik = ss.attribute("korisnik");
 			if (korisnik == null) {
-				return new Korisnik();
+				res.status(403);
+				return g.toJson("Forbidden");
 			} else {
+				res.status(200);
 				return g.toJson(korisnik);
+			}
+		});
+		
+		get("/testLogin", (req, res) -> {
+			res.type("application/json");
+			Session ss = req.session(true);
+			Korisnik korisnik = ss.attribute("korisnik");
+			if (korisnik == null) {
+				res.status(200);
+				return g.toJson(false);
+			} else {
+				res.status(200);
+				return g.toJson(true);
 			}
 		});
 
 		post("/izmeniProfil", (req, res) -> {
+			res.type("application/json");
 			Session ss = req.session(true);
 			Korisnik stari = ss.attribute("korisnik");
 			Korisnik izmenjen = g.fromJson(req.body(), Korisnik.class);
@@ -79,7 +100,8 @@ public class SparkAppMain {
 			for (Korisnik k : korisnici) {
 				if (!k.getEmail().equals(stari.getEmail())) {
 					if (k.getEmail().equals(izmenjen.getEmail())) {
-						return false;
+						res.status(400);
+						return g.toJson(false);
 					}
 				}
 			}
@@ -103,10 +125,12 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 
 		post("/izmeniOrg", (req, res) -> {
+			res.type("application/json");
 			Organizacija[] parametri = g.fromJson(req.body(), Organizacija[].class);
 			Organizacija stara = parametri[0];
 			Organizacija izmenjena = parametri[1];
@@ -114,7 +138,8 @@ public class SparkAppMain {
 			for (Organizacija o : organizacije) {
 				if (!o.getIme().equals(stara.getIme())) {
 					if (o.getIme().equals(izmenjena.getIme())) {
-						return false;
+						res.status(400);
+						return g.toJson(false);
 					}
 				}
 			}
@@ -146,10 +171,12 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 
 		post("/izmeniKor", (req, res) -> {
+			res.type("application/json");
 			Korisnik[] parametri = g.fromJson(req.body(), Korisnik[].class);
 			Korisnik stari = parametri[0];
 			Korisnik izmenjeni = parametri[1];
@@ -162,10 +189,12 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/izmeniKat", (req, res) -> {
+			res.type("application/json");
 			KategorijaVM[] parametri = g.fromJson(req.body(), KategorijaVM[].class);
 			KategorijaVM stara = parametri[0];
 			KategorijaVM izmenjena = parametri[1];
@@ -173,20 +202,23 @@ public class SparkAppMain {
 			for (KategorijaVM ka : kategorije) {
 				if (!ka.getIme().equals(stara.getIme())) {
 					if (ka.getIme().equals(izmenjena.getIme())) {
-						return false;
+						res.status(400);
+						return g.toJson(false);
 					}
 				}
 			}
 			for (VM mas : masine) {
 				if (!mas.getIme().equals(stara.getIme())) {
 					if (mas.getIme().equals(izmenjena.getIme())) {
-						return false;
+						res.status(400);
+						return g.toJson(false);
 					}
 				}
 			}
 			for (Disk d : diskovi) {
 				if (d.getIme().equals(izmenjena.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			
@@ -205,10 +237,12 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/izmeniVM", (req, res) -> {
+			res.type("application/json");
 			VM[] parametri = g.fromJson(req.body(), VM[].class);
 			VM stara = parametri[0];
 			VM izmenjena = parametri[1];
@@ -216,20 +250,23 @@ public class SparkAppMain {
 			for (KategorijaVM ka : kategorije) {
 				if (!ka.getIme().equals(stara.getIme())) {
 					if (ka.getIme().equals(izmenjena.getIme())) {
-						return false;
+						res.status(400);
+						return g.toJson(false);
 					}
 				}
 			}
 			for (VM mas : masine) {
 				if (!mas.getIme().equals(stara.getIme())) {
 					if (mas.getIme().equals(izmenjena.getIme())) {
-						return false;
+						res.status(400);
+						return g.toJson(false);
 					}
 				}
 			}
 			for (Disk d : diskovi) {
 				if (d.getIme().equals(izmenjena.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			
@@ -265,10 +302,12 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/izmeniDisk", (req, res) -> {
+			res.type("application/json");
 			Disk[] parametri = g.fromJson(req.body(), Disk[].class);
 			Disk stari = parametri[0];
 			Disk izmenjeni = parametri[1];
@@ -276,21 +315,24 @@ public class SparkAppMain {
 			for (KategorijaVM ka : kategorije) {
 				if (!ka.getIme().equals(stari.getIme())) {
 					if (ka.getIme().equals(izmenjeni.getIme())) {
-						return false;
+						res.status(400);
+						return g.toJson(false);
 					}
 				}
 			}
 			for (VM mas : masine) {
 				if (!mas.getIme().equals(stari.getIme())) {
 					if (mas.getIme().equals(izmenjeni.getIme())) {
-						return false;
+						res.status(400);
+						return g.toJson(false);
 					}
 				}
 			}
 			for (Disk dis : diskovi) {
 				if (!dis.getIme().equals(stari.getIme())) {
 					if (dis.getIme().equals(izmenjeni.getIme())) {
-						return false;
+						res.status(400);
+						return g.toJson(false);
 					}
 				}
 			}
@@ -323,10 +365,12 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/obrisiKorisnika", (req, res) -> {
+			res.type("application/json");
 			Korisnik zaBrisanje = g.fromJson(req.body(), Korisnik.class);
 			
 			for (int i = 0; i < korisnici.size(); i++) {
@@ -342,10 +386,12 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/obrisiKategoriju", (req, res) -> {
+			res.type("application/json");
 			KategorijaVM zaBrisanje = g.fromJson(req.body(), KategorijaVM.class);
 			
 			for (int i = 0; i < kategorije.size(); i++) {
@@ -353,7 +399,8 @@ public class SparkAppMain {
 					
 					for (VM masina : masine) {
 						if (masina.getKategorija().getIme().equals(zaBrisanje.getIme())) {
-							return false;
+							res.status(400);
+							return g.toJson(false);
 						}
 					}
 					kategorije.remove(i);
@@ -361,10 +408,12 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/obrisiMasinu", (req, res) -> {
+			res.type("application/json");
 			VM zaBrisanje = g.fromJson(req.body(), VM.class);
 			
 			for (int i = 0; i < masine.size(); i++) {
@@ -387,10 +436,12 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/obrisiDisk", (req, res) -> {
+			res.type("application/json");
 			Disk zaBrisanje = g.fromJson(req.body(), Disk.class);
 			
 			for (int i = 0; i < diskovi.size(); i++) {
@@ -413,29 +464,35 @@ public class SparkAppMain {
 					break;
 				}
 			}
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 
 		post("/dodajOrg", (req, res) -> {
+			res.type("application/json");
 			Organizacija nova = g.fromJson(req.body(), Organizacija.class);
 			
 			for (Organizacija o : organizacije) {
 				if (o.getIme().equals(nova.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 
 			organizacije.add(nova);
 			upisiUFajl();
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/dodajKor", (req, res) -> {
+			res.type("application/json");
 			Korisnik novi = g.fromJson(req.body(), Korisnik.class);
 			
 			for (Korisnik k : korisnici) {
 				if (k.getEmail().equals(novi.getEmail())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 
@@ -448,49 +505,59 @@ public class SparkAppMain {
 
 			korisnici.add(novi);
 			upisiUFajl();
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/dodajKat", (req, res) -> {
+			res.type("application/json");
 			KategorijaVM nova = g.fromJson(req.body(), KategorijaVM.class);
 			
 			for (KategorijaVM k : kategorije) {
 				if (k.getIme().equals(nova.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			for (VM mas : masine) {
 				if (mas.getIme().equals(nova.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			for (Disk d : diskovi) {
 				if (d.getIme().equals(nova.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			
 			kategorije.add(nova);
 			upisiUFajl();
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/dodajVM", (req, res) -> {
+			res.type("application/json");
 			VM nova = g.fromJson(req.body(), VM.class);
 			
 			for (KategorijaVM k : kategorije) {
 				if (k.getIme().equals(nova.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			for (VM mas : masine) {
 				if (mas.getIme().equals(nova.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			for (Disk d : diskovi) {
 				if (d.getIme().equals(nova.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			
@@ -500,29 +567,32 @@ public class SparkAppMain {
 				}
 			}
 			
-			// TODO : TREBA DA SE DODAJU I DISKOVI
-			// TODO : razmisli mozda treba jos nesto, sad me mrzi da razmisljam
 			masine.add(nova);
 			upisiUFajl();
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 		
 		post("/dodajDisk", (req, res) -> {
+			res.type("application/json");
 			Disk novi = g.fromJson(req.body(), Disk.class);
 			
 			for (KategorijaVM k : kategorije) {
 				if (k.getIme().equals(novi.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			for (VM mas : masine) {
 				if (mas.getIme().equals(novi.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			for (Disk d : diskovi) {
 				if (d.getIme().equals(novi.getIme())) {
-					return false;
+					res.status(400);
+					return g.toJson(false);
 				}
 			}
 			
@@ -538,15 +608,30 @@ public class SparkAppMain {
 				}
 			}
 			
-			// TODO : razmisli mozda treba jos nesto, sad me mrzi da razmisljam
 			diskovi.add(novi);
 			upisiUFajl();
-			return true;
+			res.status(200);
+			return g.toJson(true);
 		});
 
 		post("/korisniciOrganizacije", (req, res) -> {
 			res.type("application/json");
 			Organizacija org = g.fromJson(req.body(), Organizacija.class);
+			
+			Session ss = req.session(true);
+			Korisnik korisnik = ss.attribute("korisnik");
+			if (!korisnik.getUloga().equals(Uloga.SUPER_ADMIN)) {
+				if (korisnik.getUloga().equals(Uloga.KORISNIK)) {
+					res.status(403);
+					return g.toJson("Forbidden");
+				} else {
+					if (!korisnik.getOrganizacija().equals(org.getIme())) {
+						res.status(403);
+						return g.toJson("Forbidden");
+					}
+				}
+			}
+			
 			ArrayList<Korisnik> korisniciOrganizacije = new ArrayList<Korisnik>();
 			if (org.getKorisnici() != null) {
 				for (String email : org.getKorisnici()) {
@@ -557,24 +642,46 @@ public class SparkAppMain {
 					}
 				}
 			}
+			res.status(200);
 			return g.toJson(korisniciOrganizacije);
 		});
 		
 		post("/masineIzIsteOrg", (req, res) -> {
 			res.type("application/json");
+			
 			Disk disk = g.fromJson(req.body(), Disk.class);
+			Session ss = req.session(true);
+			Korisnik korisnik = ss.attribute("korisnik");
+			if (!korisnik.getUloga().equals(Uloga.SUPER_ADMIN)) {
+				if (!korisnik.getOrganizacija().equals(disk.getOrganizacija())) {
+					res.status(403);
+					return g.toJson("Forbidden");
+				}
+			}
+			
 			ArrayList<VM> masineIzIsteOrg = new ArrayList<VM>();
 			for (VM virtm : masine) {
 				if (virtm.getOrganizacija().equals(disk.getOrganizacija())) {
 					masineIzIsteOrg.add(virtm);
 				}
 			}
+			res.status(200);
 			return g.toJson(masineIzIsteOrg);
 		});
 		
 		post("/diskoviIzIsteOrg", (req, res) -> {
 			res.type("application/json");
 			VM virm = g.fromJson(req.body(), VM.class);
+			
+			Session ss = req.session(true);
+			Korisnik korisnik = ss.attribute("korisnik");
+			if (!korisnik.getUloga().equals(Uloga.SUPER_ADMIN)) {
+				if (!korisnik.getOrganizacija().equals(virm.getOrganizacija())) {
+					res.status(403);
+					return g.toJson("Forbidden");
+				}
+			}
+			
 			ArrayList<Disk> diskoviIzIsteOrg = new ArrayList<Disk>();
 			for (Disk dis : diskovi) {
 				if (dis.getOrganizacija().equals(virm.getOrganizacija())) {
@@ -583,11 +690,13 @@ public class SparkAppMain {
 					}
 				}
 			}
+			res.status(200);
 			return g.toJson(diskoviIzIsteOrg);
 		});
 
 		get("/ucitajOrganizacije", (req, res) -> {
 			res.type("application/json");
+			res.status(200);
 			return g.toJson(organizacije);
 		});
 		
@@ -612,12 +721,17 @@ public class SparkAppMain {
 		});
 
 		get("/logout", (req, res) -> {
+			res.type("application/json");
 			Session ss = req.session(true);
 			Korisnik korisnik = ss.attribute("korisnik");
 			if (korisnik != null) {
 				ss.invalidate();
+				res.status(200);
+				return g.toJson(true);
+			} else {
+				res.status(400);
+				return g.toJson(false);
 			}
-			return true;
 		});
 	}
 

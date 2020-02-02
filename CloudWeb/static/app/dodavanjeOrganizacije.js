@@ -69,7 +69,10 @@ Vue.component("dodavanje-organizacije", {
 						this.$router.replace({ path: 'organizacije' });
 					}
 				})
-				.catch(function (error) { console.log(error); });
+				.catch(error => {
+					console.log(error);
+					this.uspesnoDodavanje = false;
+				})
 			} else {
 				this.uspesnoDodavanje = true;
 			}

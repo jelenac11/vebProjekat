@@ -27,13 +27,13 @@ Vue.component("kategorije", {
 				<li class="nav-item">
 					<router-link :to="{ path: 'diskovi'}" data-toggle="pill" class="nav-link">Diskovi</router-link>
 				</li>
-				<li class="nav-item">
-					<router-link :to="{ path: 'kategorije'}" data-toggle="pill" class="nav-link active">kategorije</router-link>
+				<li v-if="this.ulogovan.uloga == 'SUPER_ADMIN'" class="nav-item">
+					<router-link :to="{ path: 'kategorije'}" data-toggle="pill" class="nav-link active">Kategorije</router-link>
 				</li>
-			 	<li class="nav-item">
+			 	<li v-if="this.ulogovan.uloga != 'KORISNIK'" class="nav-item">
 			 		<router-link :to="{ path: 'organizacije'}" data-toggle="pill" class="nav-link">Organizacije</router-link>
 				</li>
-			  	<li class="nav-item">
+			  	<li v-if="this.ulogovan.uloga != 'KORISNIK'" class="nav-item">
 			  		<router-link :to="{ path: 'korisnici'}" data-toggle="pill" class="nav-link">Korisnici</router-link>
 				</li>
 			</ul>
@@ -198,25 +198,14 @@ Vue.component("kategorije", {
 					this.uspesnaIzmena = response.data;
 					
 					if (this.uspesnaIzmena) {
-						axios
-				        .get('ucitajKategorije')
-				        .then(response => (this.kategorije = response.data))
-				        .catch(function (error) { console.log(error); });
-						axios
-				        .get('ucitajMasine')
-				        .then(response => (this.masine = response.data))
-				        .catch(function (error) { console.log(error); });
-						axios
-				        .get('ucitajDiskove')
-				        .then(response => (this.diskovi = response.data))
-				        .catch(function (error) { console.log(error); });
-						
 						toast("Uspešno izmenjena kategorija.");
-						$("#izmenaKatModal .close").click();
-						this.submitovano = false;
+						this.$router.go();
 					}
 				})
-				.catch(function (error) { console.log(error); });
+				.catch(error => {
+					console.log(error);
+					this.uspesnaIzmena = false;
+				});
 			} else {
 				this.uspesnaIzmena = true;
 			}
@@ -234,7 +223,10 @@ Vue.component("kategorije", {
 						this.$router.go();
 					}
 				})
-				.catch(function (error) { console.log(error); });
+				.catch(function (error) {
+					alert("Ne možete ukloniti ovu kategoriju jer ona ima dodeljene virtuelne mašine.");
+					console.log(error); 
+				});
 			}
 			this.$router.go();
 		},

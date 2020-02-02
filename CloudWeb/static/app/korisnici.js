@@ -10,6 +10,7 @@ Vue.component("korisnici", {
 	    		uloga : null
 	    	},
 	    	korisnici : [],
+	    	organizacije : [],
 	    	izabraniKorisnik : {},
 	    	noviKorisnik : {},
 	    	submitovano : false,
@@ -29,13 +30,13 @@ Vue.component("korisnici", {
 				<li class="nav-item">
 					<router-link :to="{ path: 'diskovi'}" data-toggle="pill" class="nav-link">Diskovi</router-link>
 				</li>
-				<li class="nav-item">
-					<router-link :to="{ path: 'kategorije'}" data-toggle="pill" class="nav-link">kategorije</router-link>
+				<li v-if="this.ulogovan.uloga == 'SUPER_ADMIN'" class="nav-item">
+					<router-link :to="{ path: 'kategorije'}" data-toggle="pill" class="nav-link">Kategorije</router-link>
 				</li>
-			 	<li class="nav-item">
+			 	<li v-if="this.ulogovan.uloga != 'KORISNIK'" class="nav-item">
 			 		<router-link :to="{ path: 'organizacije'}" data-toggle="pill" class="nav-link">Organizacije</router-link>
 				</li>
-			  	<li class="nav-item">
+			  	<li v-if="this.ulogovan.uloga != 'KORISNIK'" class="nav-item">
 			  		<router-link :to="{ path: 'korisnici'}" data-toggle="pill" class="nav-link active">Korisnici</router-link>
 				</li>
 			</ul>
@@ -227,21 +228,14 @@ Vue.component("korisnici", {
 					this.uspesnaIzmena = response.data;
 					
 					if (this.uspesnaIzmena) {
-						axios
-				        .get('ucitajKorisnike')
-				        .then(response => (this.korisnici = response.data))
-				        .catch(function (error) { console.log(error); });
-						axios
-				        .get('ucitajOrganizacije')
-				        .then(response => (this.organizacije = response.data))
-				        .catch(function (error) { console.log(error); });
-						
 						toast("Uspešno izmenjen korisnik.");
-						$("#izmenaKorisnikaModal .close").click();
-						this.submitovano = false;
+						this.$router.go();
 					}
 				})
-				.catch(function (error) { console.log(error); });
+				.catch(error => {
+					console.log(error);
+					this.uspesnaIzmena = false;
+				});
 			} else {
 				this.uspesnaIzmena = true;
 			}
@@ -273,7 +267,21 @@ Vue.component("korisnici", {
         .catch(function (error) { console.log(error); });
 		axios
 		.get('ucitajKorisnike')
-        .then(response => (this.korisnici = response.data))
+        .then(response => {
+			korisni = response.data;
+			if (this.ulogovan.uloga == "ADMIN") {
+				mojaOrgan = this.ulogovan.organizacija;
+				this.korisnici = korisni.filter(function(kor) {
+					return kor.organizacija == mojaOrgan;
+				})
+			} else if (this.ulogovan.uloga == "SUPER_ADMIN") {
+				this.korisnici = korisni;
+			}
+		})
+        .catch(function (error) { console.log(error); });
+		axios
+		.get('ucitajOrganizacije')
+        .then(response => (this.organizacije = response.data))
         .catch(function (error) { console.log(error); });
 	}
 });

@@ -1,6 +1,7 @@
 Vue.component("dodavanje-diska", {
 	data: function () {
 	    return {
+	    	ulogovan : {},
 	    	noviDisk : {
 	    		ime: "",
 	    		tip: "",
@@ -16,7 +17,7 @@ Vue.component("dodavanje-diska", {
 	template: `
 <div class="container d-flex justify-content-center">
 	<div class="card mt-5" style="width: 47rem;">
-		<h4 class="card-header">Dodavanje kategorije</h4>
+		<h4 class="card-header">Dodavanje diska</h4>
 		<div class="card-body">
 			<form class="needs-validation mb-4" v-bind:class="{ 'was-validated': submitovano }" novalidate @submit.prevent="dodajDisk" id="forma-dodaj-disk">
 			  	<div class="form-row mb-3">
@@ -57,7 +58,7 @@ Vue.component("dodavanje-diska", {
 			  	<div class="form-row">
 			    	<div class="col">
 						<label for="orgdisk" class="mt-1">Organizacija</label>
-						<select class="custom-select mt-0" v-model="noviDisk.organizacija" v-on:change="postaviMasine" id="orgdisk" required>
+						<select class="custom-select mt-0" v-model="noviDisk.organizacija" v-on:change="postaviMasine" id="orgdisk" required v-bind:disabled="this.ulogovan.uloga == 'ADMIN'">
 					    	<option v-for="org in organizacije" :value="org.ime">
 								{{ org.ime }}
 					    	</option>
@@ -90,7 +91,10 @@ Vue.component("dodavanje-diska", {
 						this.$router.replace({ path: 'diskovi' });
 					}
 				})
-				.catch(function (error) { console.log(error); });
+				.catch(error => {
+					console.log(error);
+					this.uspesnoDodavanje = false;
+				});
 			} else {
 				this.uspesnoDodavanje = true;
 			}
@@ -103,6 +107,15 @@ Vue.component("dodavanje-diska", {
 		}
 	},
 	mounted () {
+		axios
+        .get('ulogovan')
+        .then(response => {
+        	this.ulogovan = response.data;
+        	if (this.ulogovan.uloga == "ADMIN") {
+        		this.noviDisk.organizacija = this.ulogovan.organizacija;
+        	}
+        })
+        .catch(function (error) { console.log(error); });
 		axios
         .get('ucitajOrganizacije')
         .then(response => (this.organizacije = response.data))

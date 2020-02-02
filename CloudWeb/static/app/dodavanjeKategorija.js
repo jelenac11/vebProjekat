@@ -67,7 +67,10 @@ Vue.component("dodavanje-kategorije", {
 						this.$router.replace({ path: 'kategorije' });
 					}
 				})
-				.catch(function (error) { console.log(error); });
+				.catch(error => {
+					console.log(error);
+					this.uspesnoDodavanje = false;
+				});
 			} else {
 				this.uspesnoDodavanje = true;
 			}
