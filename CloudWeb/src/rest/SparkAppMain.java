@@ -3,6 +3,7 @@ package rest;
 import static spark.Spark.get;
 import static spark.Spark.port;
 import static spark.Spark.post;
+import static spark.Spark.halt;
 import static spark.Spark.staticFiles;
 
 import java.io.File;
@@ -45,6 +46,7 @@ public class SparkAppMain {
 		ucitajFajlove();
 
 		post("/login", (req, res) -> {
+			res.type("application/json");
 			Korisnik ulog = g.fromJson(req.body(), Korisnik.class);
 			for (Korisnik k : korisnici) {
 				if (k.getEmail().equals(ulog.getEmail()) && k.getLozinka().equals(ulog.getLozinka())) {
@@ -54,10 +56,10 @@ public class SparkAppMain {
 						korisnik = k;
 						ss.attribute("korisnik", korisnik);
 					}
-					return true;
+					return g.toJson(true);
 				}
 			}
-			return false;
+			return g.toJson(false);
 		});
 
 		get("/ulogovan", (req, res) -> {
@@ -65,8 +67,10 @@ public class SparkAppMain {
 			Session ss = req.session(true);
 			Korisnik korisnik = ss.attribute("korisnik");
 			if (korisnik == null) {
-				return new Korisnik();
+				res.status(403);
+				return g.toJson("Forbidden");
 			} else {
+				res.status(200);
 				return g.toJson(korisnik);
 			}
 		});
@@ -588,6 +592,7 @@ public class SparkAppMain {
 
 		get("/ucitajOrganizacije", (req, res) -> {
 			res.type("application/json");
+			res.status(200);
 			return g.toJson(organizacije);
 		});
 		

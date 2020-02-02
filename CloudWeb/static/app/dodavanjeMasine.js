@@ -1,6 +1,7 @@
 Vue.component("dodavanje-masine", {
 	data: function () {
 	    return {
+	    	ulogovan : {},
 	    	novaMasina : {
 	    		ime: "",
 	    		kategorija : {},
@@ -58,7 +59,7 @@ Vue.component("dodavanje-masine", {
 			  	<div class="form-row">
 			    	<div class="col">
 			    		<label for="vmorgan" class="mt-1">Organizacija</label>
-						<select class="custom-select mt-0" v-model="novaMasina.organizacija" id="vmorgan" required>
+						<select class="custom-select mt-0" v-model="novaMasina.organizacija" id="vmorgan" required v-bind:disabled="this.ulogovan.uloga == 'ADMIN'">
 					    	<option v-for="o in organizacije" :value="o.ime">
 								{{ o.ime }}
 					    	</option>
@@ -104,6 +105,15 @@ Vue.component("dodavanje-masine", {
 	    },
 	},
 	mounted () {
+		axios
+        .get('ulogovan')
+        .then(response => {
+        	this.ulogovan = response.data;
+        	if (this.ulogovan.uloga == "ADMIN") {
+        		this.novaMasina.organizacija = this.ulogovan.organizacija;
+        	}
+        })
+        .catch(function (error) { console.log(error); });
 		axios
         .get('ucitajOrganizacije')
         .then(response => (this.organizacije = response.data))

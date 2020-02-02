@@ -1,6 +1,7 @@
 Vue.component("dodavanje-diska", {
 	data: function () {
 	    return {
+	    	ulogovan : {},
 	    	noviDisk : {
 	    		ime: "",
 	    		tip: "",
@@ -57,7 +58,7 @@ Vue.component("dodavanje-diska", {
 			  	<div class="form-row">
 			    	<div class="col">
 						<label for="orgdisk" class="mt-1">Organizacija</label>
-						<select class="custom-select mt-0" v-model="noviDisk.organizacija" v-on:change="postaviMasine" id="orgdisk" required>
+						<select class="custom-select mt-0" v-model="noviDisk.organizacija" v-on:change="postaviMasine" id="orgdisk" required v-bind:disabled="this.ulogovan.uloga == 'ADMIN'">
 					    	<option v-for="org in organizacije" :value="org.ime">
 								{{ org.ime }}
 					    	</option>
@@ -103,6 +104,15 @@ Vue.component("dodavanje-diska", {
 		}
 	},
 	mounted () {
+		axios
+        .get('ulogovan')
+        .then(response => {
+        	this.ulogovan = response.data;
+        	if (this.ulogovan.uloga == "ADMIN") {
+        		this.noviDisk.organizacija = this.ulogovan.organizacija;
+        	}
+        })
+        .catch(function (error) { console.log(error); });
 		axios
         .get('ucitajOrganizacije')
         .then(response => (this.organizacije = response.data))
